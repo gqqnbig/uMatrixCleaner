@@ -24,8 +24,8 @@ namespace Test
         [Fact]
         public void TestGeneralize()
         {
-            var rule = new UMatrixRule("gqqnbig.blogspot.com charliegogogogo.blogspot.com script block");
-            var g = rule.Generalize();
+            var g = new UMatrixRule("gqqnbig.blogspot.com charliegogogogo.blogspot.com script block");
+            g = g.Generalize();
             Assert.Equal("gqqnbig.blogspot.com charliegogogogo.blogspot.com * block", g.ToString());
 
             g = g.Generalize();
@@ -86,5 +86,39 @@ namespace Test
             Assert.Null(g);
 
         }
+
+
+        [Fact]
+        public void TestGeneralizeWithTld()
+        {
+            var g = new UMatrixRule("blog.sina.com.cn sjs.sinajs.cn * allow");
+            g = g.Generalize();
+            Assert.Equal("blog.sina.com.cn sinajs.cn * allow", g.ToString());
+
+            g = g.Generalize();
+            Assert.Equal("blog.sina.com.cn * * allow", g.ToString());
+
+            g = g.Generalize();
+            Assert.Equal("sina.com.cn sjs.sinajs.cn * allow", g.ToString());
+
+            g = g.Generalize();
+            Assert.Equal("sina.com.cn sinajs.cn * allow", g.ToString());
+
+            g = g.Generalize();
+            Assert.Equal("sina.com.cn * * allow", g.ToString());
+
+            g = g.Generalize();
+            Assert.Equal("* sjs.sinajs.cn * allow", g.ToString());
+
+            g = g.Generalize();
+            Assert.Equal("* sinajs.cn * allow", g.ToString());
+
+            g = g.Generalize();
+            Assert.Equal("* * * allow", g.ToString());
+            
+            g = g.Generalize();
+            Assert.Null(g);
+        }
+
     }
 }

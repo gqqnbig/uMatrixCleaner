@@ -7,6 +7,8 @@ namespace uMatrixCleaner
 {
     public class UMatrixRule
     {
+        private static readonly DomainParser domainParser = new DomainParser(new FileTldRuleProvider("public_suffix_list.dat"));
+
         /// <summary>
         /// 在一般化过程中保存原始规则
         /// </summary>
@@ -112,13 +114,11 @@ namespace uMatrixCleaner
             Debug.Assert(Source.Value != "1st-party");
 
             //https://github.com/gorhill/uMatrix/wiki/Changes-from-HTTP-Switchboard#no-more-restriction-on-effective-domain-boundaries
-            //URL可以到顶级域，但我这里不考虑。URL至少要有一个点，因此com.tw之类的被允许。
+            //URL可以到顶级域，但我这里不允许。
+
             string generalizedDestination;
-            if (Destination.Value.Count(c => c == '.') > 1)
-            {
-                int p = Destination.Value.IndexOf('.');
-                generalizedDestination = Destination.Value.Substring(p + 1);
-            }
+            if (Destination.Value.Count(c => c == '.') > 1 && string.IsNullOrEmpty(domainParser.Get(Destination).SubDomain) == false)
+                generalizedDestination = Destination.Value.Substring(Destination.Value.IndexOf('.') + 1);
             else if (Destination.Value == Source.Value && Destination.Value != "*")
                 generalizedDestination = "1st-party";
             else if (Destination.Value != "*")
@@ -134,7 +134,7 @@ namespace uMatrixCleaner
 
 
             string generalizedSource;
-            if (Source.Value.Count(c => c == '.') > 1)
+            if (Source.Value.Count(c => c == '.') > 1 && string.IsNullOrEmpty(domainParser.Get(Source).SubDomain) == false)
             {
                 int p = Source.Value.IndexOf('.');
                 generalizedSource = Source.Value.Substring(p + 1);
