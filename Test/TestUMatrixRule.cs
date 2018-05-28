@@ -120,5 +120,13 @@ namespace Test
             Assert.Null(g);
         }
 
+        [Fact]
+        public void TestSpecificity()
+        {
+            var r1 = new UMatrixRule("* thisav.com script block");
+            var r2 = new UMatrixRule("* thisav.com * block");
+
+            Assert.True(r1.Specificity > r2.Specificity);
+        }
     }
 }

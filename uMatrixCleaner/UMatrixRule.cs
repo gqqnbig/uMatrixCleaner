@@ -7,7 +7,7 @@ namespace uMatrixCleaner
 {
     public class UMatrixRule
     {
-        private static readonly DomainParser domainParser = new DomainParser(new FileTldRuleProvider("public_suffix_list.dat"));
+        internal static readonly DomainParser domainParser = new DomainParser(new FileTldRuleProvider("public_suffix_list.dat"));
 
         /// <summary>
         /// 在一般化过程中保存原始规则
@@ -24,12 +24,15 @@ namespace uMatrixCleaner
 
         private int specificity = -1;
 
+        /// <summary>
+        /// 表示此规则的具体性。数值越高，规则越具体。
+        /// </summary>
         public int Specificity
         {
             get
             {
                 if (specificity == -1)
-                    specificity = Source.Specificity * 100 + Destination.Specificity * 10 + (Type == DataType.All ? 1 : 0);
+                    specificity = Source.Specificity * 100 + Destination.Specificity * 10 + (Type == DataType.All ? 0 : 1);
                 return specificity;
             }
         }
@@ -187,7 +190,7 @@ namespace uMatrixCleaner
                     else if (Value == "1st-party")
                         specificity = 1;
                     else
-                        specificity = Value.Count(c => c == '.') + 1;
+                        specificity = 1 + (UMatrixRule.domainParser.Get(Value).SubDomain?.Count(c => c == '.') ?? 0); //Null合并运算符的优先级比加号低，所以加号会先算，所以要用括号包起来。
                 }
 
                 return specificity;
