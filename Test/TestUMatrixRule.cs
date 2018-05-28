@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using uMatrixCleaner;
 using Xunit;
 
@@ -6,19 +6,26 @@ namespace Test
 {
     public class TestUMatrixRule
     {
+
         [Fact]
         public void TestCovers()
         {
             var rule1 = new UMatrixRule(new HierarchicalUrl("thisav.com"), new HierarchicalUrl("*"), DataType.Cookie, false);
-            var rule2 = new UMatrixRule(HierarchicalUrl.N1stParty, HierarchicalUrl.N1stParty, DataType.Cookie, false);
+            var rule2 = new UMatrixRule(new HierarchicalUrl("*"), HierarchicalUrl.N1stParty, DataType.Cookie, false);
 
             Assert.Null(rule2.Covers(rule1));
-            Assert.Null(rule1.Covers(rule2));
+            Assert.False(rule1.Covers(rule2), $"{rule1}不应覆盖{rule2}");
 
             rule1 = new UMatrixRule(new HierarchicalUrl("thisav.com"), new HierarchicalUrl("*"), DataType.Cookie, false);
             rule2 = new UMatrixRule(new HierarchicalUrl("thisav.com"), HierarchicalUrl.N1stParty, DataType.Cookie, false);
 
             Assert.Null(rule2.Covers(rule1));
+
+            rule1 = new UMatrixRule("cw.com.tw 1st-party cookie block");
+            rule2 = new UMatrixRule("thisav.com * cookie block");
+            Assert.False(rule2.Covers(rule1), $"{rule2}不应覆盖{rule1}");
+            Assert.False(rule1.Covers(rule2), $"{rule1}不应覆盖{rule2}");
+
         }
 
         [Fact]

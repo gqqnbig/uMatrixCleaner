@@ -39,14 +39,16 @@ namespace uMatrixCleaner
 
         public UMatrixRule(HierarchicalUrl source, HierarchicalUrl destination, DataType type, bool isAllow)
         {
+            if (HierarchicalUrl.N1stParty.Equals(source))
+                throw new ArgumentException("source不能为1st-party。");
+
             Source = source;
             Destination = destination;
             Type = type;
             IsAllow = isAllow;
         }
 
-        private UMatrixRule(HierarchicalUrl source, HierarchicalUrl destination, DataType type, bool isAllow,
-            UMatrixRule original) : this(source, destination, type, isAllow)
+        private UMatrixRule(HierarchicalUrl source, HierarchicalUrl destination, DataType type, bool isAllow, UMatrixRule original) : this(source, destination, type, isAllow)
         {
             this.originalRule = original;
         }
@@ -94,10 +96,13 @@ namespace uMatrixCleaner
                 return false;
 
             var a = Source.Covers(other.Source);
-            if (a == null)
-                return null;
+            Debug.Assert(a != null, "Source.Covers()不能返回null。");
+            if (a == false)
+                return false;
 
             var b = Destination.Covers(other.Destination);
+            if (b == false)
+                return false;
             if (b == null)
                 return null;
             return a.Value && b.Value;
