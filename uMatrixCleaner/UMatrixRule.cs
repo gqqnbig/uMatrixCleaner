@@ -119,7 +119,7 @@ namespace uMatrixCleaner
                 int p = Destination.Value.IndexOf('.');
                 generalizedDestination = Destination.Value.Substring(p + 1);
             }
-            else if (Destination.Value == Source.Value)
+            else if (Destination.Value == Source.Value && Destination.Value != "*")
                 generalizedDestination = "1st-party";
             else if (Destination.Value != "*")
                 generalizedDestination = "*";

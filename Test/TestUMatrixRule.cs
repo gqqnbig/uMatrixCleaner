@@ -81,6 +81,10 @@ namespace Test
 
             g = g.Generalize();
             Assert.Equal("* * * block", g.ToString());
+
+            g = g.Generalize();
+            Assert.Null(g);
+
         }
     }
 }
