@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using uMatrixCleaner;
 using Xunit;
 
-namespace Test
+namespace Tests
 {
     public class TestMain
     {

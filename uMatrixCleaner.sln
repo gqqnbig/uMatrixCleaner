@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27428.2015
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uMatrixCleaner", "uMatrixCleaner\uMatrixCleaner.csproj", "{45FEEDA3-D754-48F8-B5E8-8F9D87F2693C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{BCF2DBA2-3EE0-4A64-AEDC-DD44453D2520}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{BCF2DBA2-3EE0-4A64-AEDC-DD44453D2520}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

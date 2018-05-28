@@ -2,7 +2,7 @@
 using uMatrixCleaner;
 using Xunit;
 
-namespace Test
+namespace Tests
 {
     public class TestUMatrixRule
     {
