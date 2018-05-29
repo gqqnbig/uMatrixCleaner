@@ -111,12 +111,10 @@ namespace uMatrixCleaner
                 return false;
 
             //如果我的目标字段是1st-party，对方来源和目标不是1st-party，则不包含
-            if (other.Destination.IsUrl && other.Source.IsUrl &&
-                other.Destination.Value.EndsWith(other.Source.GetRootDomain()) == false && Destination.Value == "1st-party")
+            if (Destination.Value == "1st-party" && IsNot1stParty(other))
                 return false;
             //如果我的来源和目标不是1st-party，对方的目标字段是1st-party，则不包含
-            if (Destination.IsUrl && Source.IsUrl &&
-                Destination.Value.EndsWith(Source.GetRootDomain()) == false && other.Destination.Value == "1st-party")
+            if (other.Destination.Value == "1st-party" && IsNot1stParty(this))
                 return false;
 
 
@@ -146,6 +144,13 @@ namespace uMatrixCleaner
             //var b = Destination.CoversExclusively(other.Destination);
 
             //return a.GetValueOrDefault(true) || b.GetValueOrDefault(true);
+        }
+
+        private static bool IsNot1stParty(UMatrixRule other)
+        {
+            return ((other.Destination.IsDomain && other.Source.IsDomain && other.Destination.Value.EndsWith(other.Source.GetRootDomain()) == false) ||
+                    (other.Destination.IsDomain && other.Source.IsIP || other.Destination.IsIP && other.Source.IsDomain) ||
+                    (other.Destination.IsIP && other.Source.IsIP && other.Destination.Value != other.Source.Value));
         }
 
         /// <summary>
@@ -253,6 +258,29 @@ namespace uMatrixCleaner
         public HostPredicate(string value)
         {
             this.Value = value;
+        }
+
+        /// <summary>
+        /// 返回不带子域名的名称
+        /// </summary>
+        /// <returns></returns>
+        public string GetRootDomain()
+        {
+            if (IsDomain == false)
+                throw new NotSupportedException($"当地址谓词不是URL时，不能调用{nameof(GetRootDomain)}。");
+            if (IsIP)
+                throw new NotSupportedException($"当地址谓词是IP时，不能调用{nameof(GetRootDomain)}。");
+
+            var domainName = UMatrixRule.domainParser.Get(Value);
+
+            if (domainName == null)
+                return Value;
+
+            var subDomain = domainName.SubDomain;
+            if (subDomain == null)
+                return Value;
+            else
+                return Value.Substring(subDomain.Length + 1);//去掉.
         }
 
 

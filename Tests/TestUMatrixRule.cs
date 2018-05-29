@@ -142,5 +142,18 @@ namespace Tests
 
             Assert.True(r1.Specificity > r2.Specificity);
         }
+
+        [Fact]
+        public void TestGetRootDomain()
+        {
+            var addressPredicate = new HostPredicate("wenku.baidu.com");
+            Assert.Equal("baidu.com", addressPredicate.GetRootDomain());
+
+            addressPredicate = new HostPredicate("1.2.3.4");
+            Assert.ThrowsAny<Exception>(() => addressPredicate.GetRootDomain());
+
+            addressPredicate = new HostPredicate("baidu.com");
+            Assert.Equal("baidu.com", addressPredicate.GetRootDomain());
+        }
     }
 }
