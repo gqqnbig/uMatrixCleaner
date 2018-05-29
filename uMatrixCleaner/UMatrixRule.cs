@@ -23,11 +23,11 @@ namespace uMatrixCleaner
         /// </summary>
         private UMatrixRule originalRule;
 
-        public HierarchicalUrl Source { get; }
+        public HostPredicate Source { get; }
 
-        public HierarchicalUrl Destination { get; }
+        public HostPredicate Destination { get; }
 
-        public DataType Type { get; }
+        public TypePredicate Type { get; }
 
         public bool IsAllow { get; }
 
@@ -41,14 +41,14 @@ namespace uMatrixCleaner
             get
             {
                 if (specificity == -1)
-                    specificity = Source.Specificity * 100 + Destination.Specificity * 10 + (Type == DataType.All ? 0 : 1);
+                    specificity = Source.Specificity * 100 + Destination.Specificity * 10 + (Type == TypePredicate.All ? 0 : 1);
                 return specificity;
             }
         }
 
-        public UMatrixRule(HierarchicalUrl source, HierarchicalUrl destination, DataType type, bool isAllow)
+        public UMatrixRule(HostPredicate source, HostPredicate destination, TypePredicate type, bool isAllow)
         {
-            if (HierarchicalUrl.N1stParty.Equals(source))
+            if (HostPredicate.N1stParty.Equals(source))
                 throw new ArgumentException("source不能为1st-party。");
 
             Source = source;
@@ -57,7 +57,7 @@ namespace uMatrixCleaner
             IsAllow = isAllow;
         }
 
-        private UMatrixRule(HierarchicalUrl source, HierarchicalUrl destination, DataType type, bool isAllow, UMatrixRule original) : this(source, destination, type, isAllow)
+        private UMatrixRule(HostPredicate source, HostPredicate destination, TypePredicate type, bool isAllow, UMatrixRule original) : this(source, destination, type, isAllow)
         {
             this.originalRule = original;
         }
@@ -66,9 +66,9 @@ namespace uMatrixCleaner
         public UMatrixRule(string line)
         {
             string[] parts = line.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-            Source = new HierarchicalUrl(parts[0]);
-            Destination = new HierarchicalUrl(parts[1]);
-            Type = parts[2] == "*" ? uMatrixCleaner.DataType.All : (DataType)Enum.Parse(typeof(DataType), parts[2], true);
+            Source = new HostPredicate(parts[0]);
+            Destination = new HostPredicate(parts[1]);
+            Type = parts[2] == "*" ? uMatrixCleaner.TypePredicate.All : (TypePredicate)Enum.Parse(typeof(TypePredicate), parts[2], true);
             IsAllow = parts[3] == "allow";
         }
 
@@ -90,7 +90,7 @@ namespace uMatrixCleaner
 
         public override string ToString()
         {
-            var typeString = Type == DataType.All ? "*" : Type.ToString().ToLower();
+            var typeString = Type == TypePredicate.All ? "*" : Type.ToString().ToLower();
             return $"{Source} {Destination} {typeString} {(IsAllow ? "allow" : "block")}";
         }
 
@@ -102,12 +102,12 @@ namespace uMatrixCleaner
         public bool Contains(UMatrixRule other)
         {
 
-            if (Source.IsUrl && other.Source.IsUrl && other.Source.Value.EndsWith(Source.Value) == false)
+            if (Source.IsDomain && other.Source.IsDomain && other.Source.Value.EndsWith(Source.Value) == false)
                 return false;
 
             var a = Source.CoversExclusively(other.Source);
 
-            if (Destination.IsUrl && other.Destination.IsUrl && other.Destination.Value.EndsWith(Destination.Value) == false)
+            if (Destination.IsDomain && other.Destination.IsDomain && other.Destination.Value.EndsWith(Destination.Value) == false)
                 return false;
 
             //如果我的目标字段是1st-party，对方来源和目标不是1st-party，则不包含
@@ -122,7 +122,7 @@ namespace uMatrixCleaner
 
             var b = Destination.CoversExclusively(other.Destination);
 
-            if (Type != DataType.All && other.Type != DataType.All && Type != other.Type)
+            if (Type != TypePredicate.All && other.Type != TypePredicate.All && Type != other.Type)
                 return false;
 
             var c = Type.HasFlag(other.Type);
@@ -135,7 +135,7 @@ namespace uMatrixCleaner
             //if (Type.HasFlag(other.Type) == false)
             //    return false;
 
-            //if (Destination.Value == HierarchicalUrl.N1stParty.Value && other.Source.IsUrl && other.Destination.IsUrl && other.Destination.Value.EndsWith(other.Source.Value) == false)
+            //if (Destination.Value == HostPredicate.N1stParty.Value && other.Source.IsDomain && other.Destination.IsDomain && other.Destination.Value.EndsWith(other.Source.Value) == false)
             //    return false;
 
 
@@ -155,8 +155,8 @@ namespace uMatrixCleaner
         /// <returns></returns>
         public UMatrixRule Generalize()
         {
-            if (Type != DataType.All)
-                return new UMatrixRule(Source, Destination, DataType.All, IsAllow, originalRule ?? this);
+            if (Type != TypePredicate.All)
+                return new UMatrixRule(Source, Destination, TypePredicate.All, IsAllow, originalRule ?? this);
 
 
             Debug.Assert(Source.Value != "1st-party");
@@ -165,7 +165,7 @@ namespace uMatrixCleaner
             //URL可以到顶级域，但我这里不允许。
 
             string generalizedDestination;
-            if (Destination.Value.Count(c => c == '.') > 1 && string.IsNullOrEmpty(domainParser.Get(Destination).SubDomain) == false)
+            if (Destination.IsDomain && string.IsNullOrEmpty(domainParser.Get(Destination).SubDomain) == false)
                 generalizedDestination = Destination.Value.Substring(Destination.Value.IndexOf('.') + 1);
             else if (Destination.Value == Source.Value && Destination.Value != "*")
                 generalizedDestination = "1st-party";
@@ -178,11 +178,11 @@ namespace uMatrixCleaner
             }
 
             if (generalizedDestination != null)
-                return new UMatrixRule(Source, new HierarchicalUrl(generalizedDestination), (originalRule ?? this).Type, IsAllow, originalRule ?? this);
+                return new UMatrixRule(Source, new HostPredicate(generalizedDestination), (originalRule ?? this).Type, IsAllow, originalRule ?? this);
 
 
             string generalizedSource;
-            if (Source.Value.Count(c => c == '.') > 1 && string.IsNullOrEmpty(domainParser.Get(Source).SubDomain) == false)
+            if (Source.IsDomain && string.IsNullOrEmpty(domainParser.Get(Source).SubDomain) == false)
             {
                 int p = Source.Value.IndexOf('.');
                 generalizedSource = Source.Value.Substring(p + 1);
@@ -195,14 +195,14 @@ namespace uMatrixCleaner
                 generalizedSource = null;
             }
             if (generalizedSource != null)
-                return new UMatrixRule(new HierarchicalUrl(generalizedSource), (originalRule ?? this).Destination, (originalRule ?? this).Type, IsAllow, originalRule ?? this);
+                return new UMatrixRule(new HostPredicate(generalizedSource), (originalRule ?? this).Destination, (originalRule ?? this).Type, IsAllow, originalRule ?? this);
 
             return null;
         }
     }
 
     [Flags]
-    public enum DataType
+    public enum TypePredicate
     {
         Cookie = 1,
         Css = 2,
@@ -217,11 +217,15 @@ namespace uMatrixCleaner
     }
 
 
-    public class HierarchicalUrl
+    public class HostPredicate
     {
-        public static readonly HierarchicalUrl N1stParty = new HierarchicalUrl("1st-party");
+        //https://url.spec.whatwg.org/#host-representation ，Host是Domain或者IP。
 
-        public bool IsUrl => Value.Contains(".");
+        public static readonly HostPredicate N1stParty = new HostPredicate("1st-party");
+
+        public bool IsDomain => Value.Contains(".") && IsIP == false;
+
+        public bool IsIP => Value.All(c => c == '.' || char.IsDigit(c)); //目前仅支持IPv4
 
         public string Value { get; }
 
@@ -236,6 +240,8 @@ namespace uMatrixCleaner
                         specificity = 0;
                     else if (Value == "1st-party")
                         specificity = 1;
+                    else if (IsIP)
+                        specificity = 1;
                     else
                         specificity = 1 + (UMatrixRule.domainParser.Get(Value).SubDomain?.Count(c => c == '.') ?? 0); //Null合并运算符的优先级比加号低，所以加号会先算，所以要用括号包起来。
                 }
@@ -244,7 +250,7 @@ namespace uMatrixCleaner
             }
         }
 
-        public HierarchicalUrl(string value)
+        public HostPredicate(string value)
         {
             this.Value = value;
         }
@@ -253,42 +259,47 @@ namespace uMatrixCleaner
         /// <summary>
         /// 返回null表示部分包含。*和1st-party是这种情况。
         /// </summary>
-        /// <param name="url"></param>
+        /// <param name="other"></param>
         /// <returns></returns>
-        public bool? Covers(HierarchicalUrl url)
+        public bool? Covers(HostPredicate other)
         {
-            if (Value == "1st-party" || url.Value == "1st-party")
+            if (Value == "1st-party" || other.Value == "1st-party")
                 return null;
 
-            return Value == "*" || url.Value.EndsWith(Value);
+            return Value == "*" || other.Value.EndsWith(Value);
         }
 
         /// <summary>
         /// 返回null表示部分包含。*和1st-party是这种情况。
+        /// Exclusively表示本规则和other不能相同。
         /// </summary>
-        /// <param name="url"></param>
+        /// <param name="other"></param>
         /// <returns></returns>
-        public bool? CoversExclusively(HierarchicalUrl url)
+        public bool? CoversExclusively(HostPredicate other)
         {
-            if (Value == url.Value)
+            if (Value == other.Value)
                 return false;
 
-            if (Value == "1st-party" || url.Value == "1st-party")
+            if (Value == "1st-party" || other.Value == "1st-party")
                 return null;
 
-            return Value == "*" || url.Value.EndsWith(Value);
+            return Value == "*" || other.Value.EndsWith(Value);
         }
 
 
-        public HierarchicalUrl GetParent()
+        public HostPredicate GetParent()
         {
-            var urlSegmentCount = Value.Count(c => c == '.') + 1;
-            if (urlSegmentCount > 2)
-                return new HierarchicalUrl(GetLastUrlSegments(Value, urlSegmentCount - 1));
-            else if (urlSegmentCount == 2)
-                return new HierarchicalUrl("1st-party");
-            else if (Value == "1st-party")
-                return new HierarchicalUrl("*");
+            if (IsDomain)
+            {
+                var subDomainSegmentCount = UMatrixRule.domainParser.Get(Value).SubDomain?.Count(c => c == '.') ?? 0;
+                if (subDomainSegmentCount > 0)
+                    return new HostPredicate(GetLastUrlSegments(Value, subDomainSegmentCount - 1));
+                else
+                    return N1stParty;
+            }
+
+            if (Value == "1st-party")
+                return new HostPredicate("*");
             else
             {
                 Debug.Assert(Value == "*");
@@ -320,7 +331,7 @@ namespace uMatrixCleaner
         }
 
 
-        public static implicit operator string(HierarchicalUrl url)
+        public static implicit operator string(HostPredicate url)
         {
             return url.Value;
         }
