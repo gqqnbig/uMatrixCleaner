@@ -92,22 +92,51 @@ namespace uMatrixCleaner
         /// <returns></returns>
         public bool Contains(UMatrixRule other)
         {
-            if (Type.HasFlag(other.Type) == false)
+
+            if (Source.IsUrl && other.Source.IsUrl && other.Source.Value.EndsWith(Source.Value) == false)
                 return false;
 
-            if (Destination.Value == HierarchicalUrl.N1stParty.Value && other.Source.IsUrl && other.Destination.IsUrl && other.Destination.Value.EndsWith(other.Source.Value) == false)
+            var a = Source.CoversExclusively(other.Source);
+
+            if (Destination.IsUrl && other.Destination.IsUrl && other.Destination.Value.EndsWith(Destination.Value) == false)
                 return false;
 
-            var a = Source.Covers(other.Source);
-            Debug.Assert(a != null, "Source.Contains()不能返回null。");
-
-            if (Source.IsUrl && other.Source.IsUrl && a == false)
+            //如果我的目标字段是1st-party，对方来源和目标不是1st-party，则不包含
+            if (other.Destination.IsUrl && other.Source.IsUrl &&
+                other.Destination.Value.EndsWith(other.Source.GetRootDomain()) == false && Destination.Value == "1st-party")
+                return false;
+            //如果我的来源和目标不是1st-party，对方的目标字段是1st-party，则不包含
+            if (Destination.IsUrl && Source.IsUrl &&
+                Destination.Value.EndsWith(Source.GetRootDomain()) == false && other.Destination.Value == "1st-party")
                 return false;
 
 
-            var b = Destination.Covers(other.Destination);
+            var b = Destination.CoversExclusively(other.Destination);
 
-            return a.GetValueOrDefault(true) || b.GetValueOrDefault(true);
+            if (Type != DataType.All && other.Type != DataType.All && Type != other.Type)
+                return false;
+
+            var c = Type.HasFlag(other.Type);
+
+            return a.GetValueOrDefault(true) || b.GetValueOrDefault(true) || c;
+
+
+
+
+            //if (Type.HasFlag(other.Type) == false)
+            //    return false;
+
+            //if (Destination.Value == HierarchicalUrl.N1stParty.Value && other.Source.IsUrl && other.Destination.IsUrl && other.Destination.Value.EndsWith(other.Source.Value) == false)
+            //    return false;
+
+
+
+            //var a = Source.CoversExclusively(other.Source);
+            //Debug.Assert(a != null, "Source.Contains()不能返回null。");
+
+            //var b = Destination.CoversExclusively(other.Destination);
+
+            //return a.GetValueOrDefault(true) || b.GetValueOrDefault(true);
         }
 
         /// <summary>
@@ -219,6 +248,22 @@ namespace uMatrixCleaner
         /// <returns></returns>
         public bool? Covers(HierarchicalUrl url)
         {
+            if (Value == "1st-party" || url.Value == "1st-party")
+                return null;
+
+            return Value == "*" || url.Value.EndsWith(Value);
+        }
+
+        /// <summary>
+        /// 返回null表示部分包含。*和1st-party是这种情况。
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        public bool? CoversExclusively(HierarchicalUrl url)
+        {
+            if (Value == url.Value)
+                return false;
+
             if (Value == "1st-party" || url.Value == "1st-party")
                 return null;
 

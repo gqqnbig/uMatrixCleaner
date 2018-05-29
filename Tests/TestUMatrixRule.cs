@@ -18,12 +18,15 @@ namespace Tests
         [Theory]
         [InlineData("thisav.com * cookie", "* 1st-party cookie", true)]
         [InlineData("* 1st-party cookie", "thisav.com * cookie", true)]
-        [InlineData( "thisav.com 1st-party cookie","thisav.com * cookie", true)]
+        [InlineData("thisav.com 1st-party cookie", "thisav.com * cookie", true)]
         [InlineData("cw.com.tw 1st-party cookie", "thisav.com * cookie", false)]
         [InlineData("thisav.com * cookie", "cw.com.tw 1st-party cookie", false)]
         [InlineData("* ajax.googleapis.com script", "* 1st-party script", true)]
         [InlineData("youku.com 103.38.56.70 media", "* 1st-party *", false)]
         [InlineData("* 1st-party script", "accuweather.com vortex.accuweather.com script", true)]
+        [InlineData("wikipedia.org * *", "* * css", true)]
+        [InlineData("* * css", "* 1st-party *", true)]
+        [InlineData("* 1st-party other", "wenku.baidu.com baidu.com other", true)]
         public void TestCovers(string r1, string r2, bool? result)
         {
             var rule1 = new UMatrixRule(r1 + " block");
@@ -126,7 +129,7 @@ namespace Tests
 
             g = g.Generalize();
             Assert.Equal("* * * allow", g.ToString());
-            
+
             g = g.Generalize();
             Assert.Null(g);
         }
