@@ -18,7 +18,7 @@ namespace uMatrixCleaner
         static string Clean(string input)
         {
             var rules = from line in input.Split("\r\n")
-                        where line.Length > 0 && line.StartsWith("matrix-off") == false && line.StartsWith("noscript-spoof") == false
+                        where line.Length > 0 && line.StartsWith("matrix-off") == false && line.StartsWith("noscript-spoof") == false && line.Contains("#") == false
                         select new UMatrixRule(line);
 
 
