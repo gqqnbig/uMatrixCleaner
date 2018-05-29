@@ -26,6 +26,10 @@ namespace Tests
             Assert.False(rule2.Covers(rule1), $"{rule2}不应覆盖{rule1}");
             Assert.False(rule1.Covers(rule2), $"{rule1}不应覆盖{rule2}");
 
+
+            rule1 = new UMatrixRule("* ajax.googleapis.com script allow");
+            rule2 = new UMatrixRule("* 1st-party script allow");
+            Assert.Null(rule2.Covers(rule1));
         }
 
         [Fact]

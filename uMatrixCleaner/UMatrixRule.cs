@@ -215,12 +215,10 @@ namespace uMatrixCleaner
         /// <returns></returns>
         public bool? Covers(HierarchicalUrl url)
         {
-            if (Value == "*" && url.Value == "1st-party" || url.Value == "*" && Value == "1st-party")
+            if (Value == "1st-party")
                 return null;
 
-            return Value == "*"
-               || Value == "1st-party" && url.Value.Contains(".")
-               || url.Value.EndsWith(Value);
+            return Value == "*" || url.Value.EndsWith(Value);
         }
 
 
