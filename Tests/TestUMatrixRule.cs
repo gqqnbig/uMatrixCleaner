@@ -6,30 +6,30 @@ namespace Tests
 {
     public class TestUMatrixRule
     {
+        //        static TestUMatrixRule()
+        //        {
+        //#if DEBUG
+        //            //预先初始化DomainParser，否则调试时容易发送求值超时。
+        //            UMatrixRule.domainParser.Get("www.google.com");
+        //#endif
+        //        }
 
-        [Fact]
-        public void TestCovers()
+
+        [Theory]
+        [InlineData("thisav.com * cookie", "* 1st-party cookie", true)]
+        [InlineData("* 1st-party cookie", "thisav.com * cookie", true)]
+        [InlineData( "thisav.com 1st-party cookie","thisav.com * cookie", true)]
+        [InlineData("cw.com.tw 1st-party cookie", "thisav.com * cookie", false)]
+        [InlineData("thisav.com * cookie", "cw.com.tw 1st-party cookie", false)]
+        [InlineData("* ajax.googleapis.com script", "* 1st-party script", true)]
+        [InlineData("youku.com 103.38.56.70 media", "* 1st-party *", false)]
+        [InlineData("* 1st-party script", "accuweather.com vortex.accuweather.com script", true)]
+        public void TestCovers(string r1, string r2, bool? result)
         {
-            var rule1 = new UMatrixRule(new HierarchicalUrl("thisav.com"), new HierarchicalUrl("*"), DataType.Cookie, false);
-            var rule2 = new UMatrixRule(new HierarchicalUrl("*"), HierarchicalUrl.N1stParty, DataType.Cookie, false);
+            var rule1 = new UMatrixRule(r1 + " block");
+            var rule2 = new UMatrixRule(r2 + " block");
 
-            Assert.Null(rule2.Covers(rule1));
-            Assert.False(rule1.Covers(rule2), $"{rule1}不应覆盖{rule2}");
-
-            rule1 = new UMatrixRule(new HierarchicalUrl("thisav.com"), new HierarchicalUrl("*"), DataType.Cookie, false);
-            rule2 = new UMatrixRule(new HierarchicalUrl("thisav.com"), HierarchicalUrl.N1stParty, DataType.Cookie, false);
-
-            Assert.Null(rule2.Covers(rule1));
-
-            rule1 = new UMatrixRule("cw.com.tw 1st-party cookie block");
-            rule2 = new UMatrixRule("thisav.com * cookie block");
-            Assert.False(rule2.Covers(rule1), $"{rule2}不应覆盖{rule1}");
-            Assert.False(rule1.Covers(rule2), $"{rule1}不应覆盖{rule2}");
-
-
-            rule1 = new UMatrixRule("* ajax.googleapis.com script allow");
-            rule2 = new UMatrixRule("* 1st-party script allow");
-            Assert.Null(rule2.Covers(rule1));
+            Assert.Equal(result, rule1.Contains(rule2));
         }
 
         [Fact]

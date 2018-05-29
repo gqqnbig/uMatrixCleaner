@@ -90,22 +90,24 @@ namespace uMatrixCleaner
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool? Covers(UMatrixRule other)
+        public bool Contains(UMatrixRule other)
         {
             if (Type.HasFlag(other.Type) == false)
                 return false;
 
-            var a = Source.Covers(other.Source);
-            Debug.Assert(a != null, "Source.Covers()不能返回null。");
-            if (a == false)
+            if (Destination.Value == HierarchicalUrl.N1stParty.Value && other.Source.IsUrl && other.Destination.IsUrl && other.Destination.Value.EndsWith(other.Source.Value) == false)
                 return false;
 
-            var b = Destination.Covers(other.Destination);
-            if (b == false)
+            var a = Source.Covers(other.Source);
+            Debug.Assert(a != null, "Source.Contains()不能返回null。");
+
+            if (Source.IsUrl && other.Source.IsUrl && a == false)
                 return false;
-            if (b == null)
-                return null;
-            return a.Value && b.Value;
+
+
+            var b = Destination.Covers(other.Destination);
+
+            return a.GetValueOrDefault(true) || b.GetValueOrDefault(true);
         }
 
         /// <summary>
@@ -181,6 +183,8 @@ namespace uMatrixCleaner
     {
         public static readonly HierarchicalUrl N1stParty = new HierarchicalUrl("1st-party");
 
+        public bool IsUrl => Value.Contains(".");
+
         public string Value { get; }
 
         private int specificity = -1;
@@ -215,7 +219,7 @@ namespace uMatrixCleaner
         /// <returns></returns>
         public bool? Covers(HierarchicalUrl url)
         {
-            if (Value == "1st-party")
+            if (Value == "1st-party" || url.Value == "1st-party")
                 return null;
 
             return Value == "*" || url.Value.EndsWith(Value);
