@@ -6,15 +6,6 @@ namespace Tests
 {
     public class TestUMatrixRule
     {
-        //        static TestUMatrixRule()
-        //        {
-        //#if DEBUG
-        //            //预先初始化DomainParser，否则调试时容易发送求值超时。
-        //            UMatrixRule.domainParser.Get("www.google.com");
-        //#endif
-        //        }
-
-
         [Theory]
         [InlineData("thisav.com * cookie", "* 1st-party cookie", true)]
         [InlineData("* 1st-party cookie", "thisav.com * cookie", true)]
