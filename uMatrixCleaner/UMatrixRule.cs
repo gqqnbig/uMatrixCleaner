@@ -72,7 +72,6 @@ namespace uMatrixCleaner
             IsAllow = parts[3] == "allow";
         }
 
-        // override object.Equals
         public override bool Equals(object obj)
         {
             var other = obj as UMatrixRule;
@@ -82,7 +81,6 @@ namespace uMatrixCleaner
             return Source == other.Source && Destination == other.Destination && Type == other.Type && IsAllow == other.IsAllow;
         }
 
-        // override object.GetHashCode
         public override int GetHashCode()
         {
             return Source?.GetHashCode() ?? 0 ^ Destination?.GetHashCode() ?? 0 ^ Type.GetHashCode() ^ IsAllow.GetHashCode();
