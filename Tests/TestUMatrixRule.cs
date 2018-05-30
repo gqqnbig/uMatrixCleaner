@@ -24,7 +24,17 @@ namespace Tests
             var rule1 = new UMatrixRule(r1 + " block");
             var rule2 = new UMatrixRule(r2 + " block");
 
-            Assert.Equal(result, rule1.Contains(rule2));
+            Assert.Equal(result, rule1.IsSuperOrHasJoint(rule2));
+        }
+
+        [Theory]
+        [InlineData("* cdn.sstatic.net script", "stackexchange.com sstatic.net script", false)]
+        public void TestIsProperSuperOf(string r1, string r2, bool result)
+        {
+            var rule1 = new UMatrixRule(r1 + " block");
+            var rule2 = new UMatrixRule(r2 + " block");
+
+            Assert.Equal(result, rule1.IsProperSuperOf(rule2));
         }
 
         [Fact]

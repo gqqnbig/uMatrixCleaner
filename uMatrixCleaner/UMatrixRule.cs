@@ -93,11 +93,12 @@ namespace uMatrixCleaner
         }
 
         /// <summary>
-        /// 来源、目标、类型是否包含另一个规则。不考虑动作。
+        /// 计算本选择器（来源、目标、类型）的范围是不是另一个规则的选择器的范围的超集，
+        /// 或本选择器的范围与另一个规则的选择器的范围具有交集。
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Contains(UMatrixRule other)
+        public bool IsSuperOrHasJoint(UMatrixRule other)
         {
 
             if (Source.IsDomain && other.Source.IsDomain && other.Source.Value.EndsWith(Source.Value) == false)
@@ -129,24 +130,49 @@ namespace uMatrixCleaner
             var c = Type.HasFlag(other.Type);
 
             return a.GetValueOrDefault(true) || b.GetValueOrDefault(true) || c;
+        }
 
+        public bool IsSuperOf(UMatrixRule other)
+        {
+            if (Source.IsDomain && other.Source.IsDomain && other.Source.Value.EndsWith(Source.Value) == false)
+                return false;
 
+            var a = Source.Covers(other.Source);
+            if ((Source.IsDomain || Source.IsIP) && (other.Source.IsDomain || other.Source.IsIP)
+                                                 && a == false)
+                return false;
 
+            if (Destination.IsDomain && other.Destination.IsDomain && other.Destination.Value.EndsWith(Destination.Value) == false)
+                return false;
 
-            //if (Type.HasFlag(other.Type) == false)
-            //    return false;
+            //如果我的目标字段是1st-party，对方来源和目标不是1st-party，则不包含
+            if (Destination.Value == "1st-party" && IsNot1stParty(other))
+                return false;
+            //如果我的来源和目标不是1st-party，对方的目标字段是1st-party，则不包含
+            if (other.Destination.Value == "1st-party" && IsNot1stParty(this))
+                return false;
 
-            //if (Destination.Value == HostPredicate.N1stParty.Value && other.Source.IsDomain && other.Destination.IsDomain && other.Destination.Value.EndsWith(other.Source.Value) == false)
-            //    return false;
+            var b = Destination.Covers(other.Destination);
+            if ((Destination.IsDomain || Destination.IsIP) && (other.Destination.IsDomain || other.Destination.IsIP)
+                                                           && b == false)
+                return false;
 
+            if (Type != TypePredicate.All && other.Type != TypePredicate.All && Type != other.Type)
+                return false;
 
+            var c = Type.HasFlag(other.Type);
 
-            //var a = Source.CoversExclusively(other.Source);
-            //Debug.Assert(a != null, "Source.Contains()不能返回null。");
+            return a.GetValueOrDefault(false) && b.GetValueOrDefault(false) && c;
+        }
 
-            //var b = Destination.CoversExclusively(other.Destination);
-
-            //return a.GetValueOrDefault(true) || b.GetValueOrDefault(true);
+        /// <summary>
+        /// 测试本规则的选择器是不是另一个选择器的真超集
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool IsProperSuperOf(UMatrixRule other)
+        {
+            return this.Equals(other) == false && IsSuperOf(other);
         }
 
         private static bool IsNot1stParty(UMatrixRule other)
