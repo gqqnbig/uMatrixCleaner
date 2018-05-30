@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 
 namespace uMatrixCleaner
 {
@@ -23,12 +21,11 @@ namespace uMatrixCleaner
 
 
 
-            TreeNode<string, UMatrixRule> tree = new TreeNode<string, UMatrixRule>();
             Predicate<UMatrixRule>[] examptedFromRemoving =
             {
                 //r=>r.ToString().Contains("#") || r.ToString()=="* * script block" || r.ToString()=="* * frame block",
-                //r=>r.Source.Value=="*" && r.Destination.Value!="*" && (r.Type.HasFlag(DataType.Script) || r.Type.HasFlag(DataType.Frame)),
-                r=>r.Destination=="simg.sinajs.cn"
+                //r=>r.Source.Value=="*" && r.Destination.Value!="*" && (r.Type.HasFlag(TypePredicate.Script) || r.Type.HasFlag(TypePredicate.Frame)),
+                r=>r.Destination.Value=="simg.sinajs.cn"
             };
             var workingRules = new LinkedList<UMatrixRule>(rules);
             Simply(workingRules, examptedFromRemoving, 3);
@@ -71,81 +68,59 @@ namespace uMatrixCleaner
         /// <param name="groupingThreshold"></param>
         static void Simply(LinkedList<UMatrixRule> rules, Predicate<UMatrixRule>[] examptedFromRemoving, int groupingThreshold)
         {
-            var currentRuleNode = rules.First;
-            while (currentRuleNode != null)
+            LinkedListNode<UMatrixRule> nextNode = rules.First;
+            while (nextNode != null)
             {
-                var currentRule = currentRuleNode.Value;
-                var generalizedRule = currentRule;
-                bool isGeneralized = false;
-                while (generalizedRule != null)
+                var currentNode = nextNode;
+                var currentRule = currentNode.Value;
+                nextNode = currentNode.Next;
+                //var generalizedRule = currentRule;
+
+                if (examptedFromRemoving.Any(p => p(currentRule)))
+                    continue;
+
+                var coveringRules = GetCoveringRules(currentRule, rules).ToArray();
+                if (coveringRules.Any(r => currentRule.Contains(r) && r.IsAllow != currentRule.IsAllow))
                 {
-                    var coveredRules = GetCoveredRules(currentRuleNode.Next, generalizedRule);
-
-                    //如果GetClosestParent返回null，说明该规则不能再一般化，说明这是顶级规则，不能删除。
-                    var toRemove = coveredRules.Where(r => GetClosestParent(r.Value, rules)?.IsAllow == r.Value.IsAllow).ToList();
-                    if (isGeneralized == false)
-                    {
-                        foreach (var node in coveredRules)
-                        {
-                            if (examptedFromRemoving.Any(p => p(node.Value)))
-                                continue;
-
-                            var cp = GetClosestParent(node.Value, rules);
-                            if (cp?.IsAllow == node.Value.IsAllow)
-                            {
-                                Console.WriteLine($"删除 \"{node.Value}\" ，因为它被 \"{cp}\" 包含。");
-                                rules.Remove(node);
-                            }
-                        }
-                    }
-                    else if (toRemove.Count >= groupingThreshold)
-                    {
-
-                        var conflictingRule = FindConflictingRule(generalizedRule, rules);
-
-                        if (conflictingRule == null)
-                        {
-                            Console.Write("合并");
-                            foreach (var node in toRemove)
-                            {
-                                Console.WriteLine("\t" + node.Value);
-                                rules.Remove(node);
-                            }
-
-                            Console.WriteLine("==>\t为" + generalizedRule);
-
-                            rules.AddFirst(generalizedRule);
-                        }
-                        else
-                        {
-                            Console.WriteLine("未能合并" + string.Join("\r\n\t", toRemove));
-                            Console.WriteLine("==>\t为" + generalizedRule);
-                            Console.WriteLine($"\t因为{conflictingRule}具有更高优先级");
-                        }
-                    }
-
-                    generalizedRule = generalizedRule.Generalize();
-                    isGeneralized = true;
+                    //如果有一个部分匹配的相反规则，则本规则不能删除
                 }
-
-
-                currentRuleNode = currentRuleNode.Next;
+                else
+                {
+                    var cp = coveringRules.FirstOrDefault(r => currentRule.Contains(r) == false && r.IsAllow == currentRule.IsAllow);
+                    //如果有一个完全匹配的相同规则，则本规则可以删除
+                    if (cp != null)
+                    {
+                        Console.WriteLine($"删除 \"{currentRule}\" ，因为它被 \"{cp}\" 包含。");
+                        rules.Remove(currentNode);
+                    }
+                }
 
             }
         }
 
-        private static List<LinkedListNode<UMatrixRule>> GetCoveredRules(LinkedListNode<UMatrixRule> startNode, UMatrixRule generalizedRule)
+        private static void MergeRules(LinkedList<UMatrixRule> rules, UMatrixRule generalizedRule, IEnumerable<LinkedListNode<UMatrixRule>> toRemove)
         {
-            List<LinkedListNode<UMatrixRule>> coveredRules = new List<LinkedListNode<UMatrixRule>>();
-            while (startNode != null)
+            var conflictingRule = FindConflictingRule(generalizedRule, rules);
+
+            if (conflictingRule == null)
             {
-                if (generalizedRule.Covers(startNode.Value).GetValueOrDefault(false) && generalizedRule.IsAllow == startNode.Value.IsAllow)
-                    coveredRules.Add(startNode);
+                Console.Write("合并");
+                foreach (var node in toRemove)
+                {
+                    Console.WriteLine("\t" + node.Value);
+                    rules.Remove(node);
+                }
 
-                startNode = startNode.Next;
+                Console.WriteLine("==>\t为" + generalizedRule);
+
+                rules.AddFirst(generalizedRule);
             }
-
-            return coveredRules;
+            else
+            {
+                Console.WriteLine("未能合并" + string.Join("\r\n\t", toRemove.Select(n => n.Value)));
+                Console.WriteLine("==>\t为" + generalizedRule);
+                Console.WriteLine($"\t因为{conflictingRule}具有更高优先级");
+            }
         }
 
         /// <summary>
@@ -156,48 +131,35 @@ namespace uMatrixCleaner
         /// <returns></returns>
         public static UMatrixRule FindConflictingRule(UMatrixRule rule, ICollection<UMatrixRule> list)
         {
-            var closestParent = GetClosestParent(rule, list);
+            var closestParent = GetClosestParent(rule, list, true);
             if (closestParent?.IsAllow != rule.IsAllow)
                 return closestParent;
             else
                 return null;
-
-
-
-            //UMatrixRule conflictingRule = null;
-            //HierarchicalUrl parentDestination = rule.Destination.GetParent();
-            //while (parentDestination != null)
-            //{
-            //    conflictingRule = list.FirstOrDefault(r =>
-            //        r.Destination.Equals(parentDestination) && r.Covers(rule) &&
-            //        r.IsAllow != rule.IsAllow);
-            //    if (conflictingRule != null)
-            //        break;
-
-            //    parentDestination = parentDestination.GetParent();
-            //}
-
-            //return conflictingRule;
         }
 
-        public static UMatrixRule GetClosestParent(UMatrixRule rule, ICollection<UMatrixRule> list)
+        /// <summary>
+        /// 返回值以Specificity降序排列
+        /// </summary>
+        /// <param name="rule"></param>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public static IEnumerable<UMatrixRule> GetCoveringRules(UMatrixRule rule, ICollection<UMatrixRule> list)
         {
-            var closestParent = list.Where(r => r.Equals(rule) == false && r.Covers(rule).GetValueOrDefault(true))
+            var ret = from r in list
+                      where r.Equals(rule) == false && r.Contains(rule)
+                      orderby r.Specificity descending
+                      select r;
+
+            return ret;
+        }
+
+
+        public static UMatrixRule GetClosestParent(UMatrixRule rule, ICollection<UMatrixRule> list, bool allowPartial)
+        {
+            var closestParent = list.Where(r => r.Equals(rule) == false && r.Contains(rule))
                                 .OrderByDescending(r => r.Specificity).FirstOrDefault();
             return closestParent;
         }
-    }
-
-
-    class TreeNode<TKey, TValue>
-    {
-        public TKey Key { get; set; }
-
-        /// <summary>
-        /// 只有叶子节点才有Value
-        /// </summary>
-        public TValue Value { get; set; }
-
-        public Dictionary<TKey, TreeNode<TKey, TValue>> Children { get; set; } = new Dictionary<TKey, TreeNode<TKey, TValue>>();
     }
 }
