@@ -28,7 +28,7 @@ namespace uMatrixCleaner
                 r=>r.Destination.Value=="simg.sinajs.cn"
             };
             var workingRules = new LinkedList<UMatrixRule>(rules);
-            Simply(workingRules, examptedFromRemoving, 3);
+            Deduplicate(workingRules, examptedFromRemoving);
 
 
             ////合并Target属性
@@ -65,22 +65,25 @@ namespace uMatrixCleaner
         /// </summary>
         /// <param name="rules"></param>
         /// <param name="examptedFromRemoving">符合任意谓词的规则不会被移除。特别适合解禁全局黑名单。</param>
-        /// <param name="groupingThreshold"></param>
-        static void Simply(LinkedList<UMatrixRule> rules, Predicate<UMatrixRule>[] examptedFromRemoving, int groupingThreshold)
+        public static void Deduplicate(LinkedList<UMatrixRule> rules, Predicate<UMatrixRule>[] examptedFromRemoving)
         {
             LinkedListNode<UMatrixRule> nextNode = rules.First;
             while (nextNode != null)
             {
                 var currentNode = nextNode;
                 var currentRule = currentNode.Value;
-                nextNode = currentNode.Next;
+                nextNode = currentNode.Next; //保存下节点指针，万一本节点被删除了。
                 //var generalizedRule = currentRule;
 
                 if (examptedFromRemoving.Any(p => p(currentRule)))
                     continue;
 
                 var coveringRules = GetCoveringRules(currentRule, rules).ToArray();
-                if (coveringRules.Any(r => currentRule.Contains(r) && r.IsAllow != currentRule.IsAllow))
+
+                var highestSpecificity = coveringRules.Max(r => r.Specificity);
+                var mostDetailedRules = coveringRules.Where(r => r.Specificity == highestSpecificity);
+
+                if (mostDetailedRules.Any(r => currentRule.Contains(r) && r.IsAllow != currentRule.IsAllow))
                 {
                     //如果有一个部分匹配的相反规则，则本规则不能删除
                 }
@@ -94,7 +97,6 @@ namespace uMatrixCleaner
                         rules.Remove(currentNode);
                     }
                 }
-
             }
         }
 
@@ -148,7 +150,6 @@ namespace uMatrixCleaner
         {
             var ret = from r in list
                       where r.Equals(rule) == false && r.Contains(rule)
-                      orderby r.Specificity descending
                       select r;
 
             return ret;
