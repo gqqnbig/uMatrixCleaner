@@ -141,7 +141,7 @@ namespace uMatrixCleaner
         }
 
         /// <summary>
-        /// 返回值以Specificity降序排列
+        /// 从列表中获取包含指定规则的规则。
         /// </summary>
         /// <param name="rule"></param>
         /// <param name="list"></param>
