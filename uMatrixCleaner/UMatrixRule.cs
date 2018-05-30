@@ -105,10 +105,10 @@ namespace uMatrixCleaner
             if (Source.IsDomain && other.Source.IsDomain && other.Source.Value.EndsWith(Source.Value) == false)
                 return false;
 
+            var a = Source.Covers(other.Source);
             if ((Source.IsDomain || Source.IsIP) && (other.Source.IsDomain|| other.Source.IsIP) 
-                && Source.Covers(other.Source) == false)
+                && a == false)
                 return false;
-            var a = Source.CoversExclusively(other.Source);
 
             if (Destination.IsDomain && other.Destination.IsDomain && other.Destination.Value.EndsWith(Destination.Value) == false)
                 return false;
@@ -120,10 +120,10 @@ namespace uMatrixCleaner
             if (other.Destination.Value == "1st-party" && IsNot1stParty(this))
                 return false;
 
+            var b = Destination.Covers(other.Destination);
             if ((Destination.IsDomain || Destination.IsIP) && (other.Destination.IsDomain || other.Destination.IsIP) 
-                && Destination.Covers(other.Destination) == false)
+                && b == false)
                 return false;
-            var b = Destination.CoversExclusively(other.Destination);
 
             if (Type != TypePredicate.All && other.Type != TypePredicate.All && Type != other.Type)
                 return false;
@@ -301,24 +301,6 @@ namespace uMatrixCleaner
 
             return Value == "*" || other.Value.EndsWith(Value);
         }
-
-        /// <summary>
-        /// 返回null表示部分包含。*和1st-party是这种情况。
-        /// Exclusively表示本规则和other不能相同。
-        /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
-        public bool? CoversExclusively(HostPredicate other)
-        {
-            if (Value == other.Value)
-                return false;
-
-            if (Value == "1st-party" || other.Value == "1st-party")
-                return null;
-
-            return Value == "*" || other.Value.EndsWith(Value);
-        }
-
 
         public HostPredicate GetParent()
         {
