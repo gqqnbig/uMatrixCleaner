@@ -105,6 +105,9 @@ namespace uMatrixCleaner
             if (Source.IsDomain && other.Source.IsDomain && other.Source.Value.EndsWith(Source.Value) == false)
                 return false;
 
+            if ((Source.IsDomain || Source.IsIP) && (other.Source.IsDomain|| other.Source.IsIP) 
+                && Source.Covers(other.Source) == false)
+                return false;
             var a = Source.CoversExclusively(other.Source);
 
             if (Destination.IsDomain && other.Destination.IsDomain && other.Destination.Value.EndsWith(Destination.Value) == false)
@@ -117,7 +120,9 @@ namespace uMatrixCleaner
             if (other.Destination.Value == "1st-party" && IsNot1stParty(this))
                 return false;
 
-
+            if ((Destination.IsDomain || Destination.IsIP) && (other.Destination.IsDomain || other.Destination.IsIP) 
+                && Destination.Covers(other.Destination) == false)
+                return false;
             var b = Destination.CoversExclusively(other.Destination);
 
             if (Type != TypePredicate.All && other.Type != TypePredicate.All && Type != other.Type)

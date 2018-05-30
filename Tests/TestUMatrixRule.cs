@@ -27,6 +27,7 @@ namespace Tests
         [InlineData("wikipedia.org * *", "* * css", true)]
         [InlineData("* * css", "* 1st-party *", true)]
         [InlineData("* 1st-party other", "wenku.baidu.com baidu.com other", true)]
+        [InlineData("* youtube.com *", "91porn.com 192.240.120.2 media", false)]
         public void TestCovers(string r1, string r2, bool? result)
         {
             var rule1 = new UMatrixRule(r1 + " block");
