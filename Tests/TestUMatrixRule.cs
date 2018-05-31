@@ -22,7 +22,7 @@ namespace Tests
         [InlineData("* cdn.sstatic.net script", "stackexchange.com sstatic.net script", true)]
         [InlineData("* youtube.com *", "* youtube.com media", true)]
         [InlineData("* youtube.com media", "* youtube.com *", true)]
-        public void TestCovers(string r1, string r2, bool result)
+        public static void TestIsSuperOrHasJoint(string r1, string r2, bool result)
         {
             var rule1 = new UMatrixRule(r1 + " block");
             var rule2 = new UMatrixRule(r2 + " block");
@@ -33,7 +33,7 @@ namespace Tests
         [Theory]
         [InlineData("* cdn.sstatic.net script", "stackexchange.com sstatic.net script", false)]
         [InlineData("acfun.tv cdn.aixifan.com *", "acfun.tv cdn.aixifan.com other", true)]
-        public void TestIsProperSuperOf(string r1, string r2, bool result)
+        public static void TestIsProperSuperOf(string r1, string r2, bool result)
         {
             var rule1 = new UMatrixRule(r1 + " block");
             var rule2 = new UMatrixRule(r2 + " block");
@@ -42,7 +42,7 @@ namespace Tests
         }
 
         [Fact]
-        public void TestGeneralize()
+        public static void TestGeneralize()
         {
             var g = new UMatrixRule("gqqnbig.blogspot.com charliegogogogo.blogspot.com script block").Selector;
             g = g.Generalize();
@@ -109,7 +109,7 @@ namespace Tests
 
 
         [Fact]
-        public void TestGeneralizeWithTld()
+        public static void TestGeneralizeWithTld()
         {
             var g = new UMatrixRule("blog.sina.com.cn sjs.sinajs.cn * allow").Selector;
             g = g.Generalize();
@@ -141,7 +141,7 @@ namespace Tests
         }
 
         [Fact]
-        public void TestSpecificity()
+        public static void TestSpecificity()
         {
             var r1 = new UMatrixRule("* thisav.com script block");
             var r2 = new UMatrixRule("* thisav.com * block");
@@ -150,7 +150,7 @@ namespace Tests
         }
 
         [Fact]
-        public void TestGetRootDomain()
+        public static void TestGetRootDomain()
         {
             var addressPredicate = new HostPredicate("wenku.baidu.com");
             Assert.Equal("baidu.com", addressPredicate.GetRootDomain());
