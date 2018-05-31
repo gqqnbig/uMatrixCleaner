@@ -84,6 +84,19 @@ namespace uMatrixCleaner
         }
 
 
+        /// <summary>
+        /// 计算本选择器是不是另一个规则的选择器有交集。
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool HasJoint(Selector other)
+        {
+            if (EvaluateRelationship(other, out var a, out var b, out var c) == false)
+                return false;
+
+            return a == null && b == null && c == null;
+        }
+
         public bool IsSuperOf(Selector other)
         {
             if (EvaluateRelationship(other, out var a, out var b, out var c) == false)

@@ -30,30 +30,7 @@ namespace uMatrixCleaner
             var workingRules = new LinkedList<UMatrixRule>(rules);
             Deduplicate(workingRules, examptedFromRemoving);
 
-
-            ////合并Target属性
-            //foreach (var rule in rules)
-            //{
-            //    var urlParts = rule.Destination.Split('.');
-            //    TreeNode<string, UMatrixRule> node = tree;
-            //    for (int i = urlParts.Length - 1; i >= 0; i--)
-            //    {
-            //        if (node.Children.TryGetValue(urlParts[i], out var child))
-            //        {
-            //            node = child;
-            //        }
-            //        else
-            //        {
-            //            child = new TreeNode<string, UMatrixRule>();
-            //            child.Key = urlParts[i];
-            //            if (i == 0)
-            //                child.Value = rule;
-
-            //            node.Children.Add(urlParts[i], child);
-            //            node = child;
-            //        }
-            //    }
-            //}
+            //Merge(workingRules, 3);
 
 
 
@@ -78,18 +55,9 @@ namespace uMatrixCleaner
                 if (examptedFromRemoving.Any(p => p(currentRule)))
                     continue;
 
-                //superRules是包含当前规则的规则
-                var superRules = (from r in rules
-                                  where r.Equals(currentRule) == false && r.Selector.IsSuperOrHasJoint(currentRule.Selector)
-                                  select r).ToArray();
+                var mostDetailedSuperRules = GetMostDetailedSuperRules(currentRule, rules);
 
-                if (superRules.Length == 0)
-                    continue;
-
-                var highestSpecificity = superRules.Max(r => r.Selector.Specificity);
-                var mostDetailedSuperRules = superRules.Where(r => r.Selector.Specificity == highestSpecificity);
-
-                if (mostDetailedSuperRules.Any(r => currentRule.Selector.IsSuperOrHasJoint(r.Selector) && r.IsAllow != currentRule.IsAllow))
+                if (mostDetailedSuperRules.Any(r => currentRule.Selector.HasJoint(r.Selector) && r.IsAllow != currentRule.IsAllow))
                 {
                     //如果有一个部分匹配的相反规则，则本规则不能删除
                 }
@@ -104,6 +72,21 @@ namespace uMatrixCleaner
                     }
                 }
             }
+        }
+
+        private static UMatrixRule[] GetMostDetailedSuperRules(UMatrixRule rule, IEnumerable<UMatrixRule> rules)
+        {
+            //superRules是包含当前规则的规则
+            var superRules = (from r in rules
+                              where r.Equals(rule) == false && r.Selector.IsSuperOrHasJoint(rule.Selector)
+                              select r).ToArray();
+
+            if (superRules.Length == 0)
+                return Array.Empty<UMatrixRule>();//不用new UMatrixRule[0]因为Array.Empty()会重用对象。
+
+            var highestSpecificity = superRules.Max(r => r.Selector.Specificity);
+            var mostDetailedSuperRules = superRules.Where(r => r.Selector.Specificity == highestSpecificity);
+            return mostDetailedSuperRules.ToArray();
         }
 
         //private static void Merge(LinkedList<UMatrixRule> rules)
