@@ -20,6 +20,8 @@ namespace Tests
         [InlineData("* 1st-party other", "wenku.baidu.com baidu.com other", true)]
         [InlineData("* youtube.com *", "91porn.com 192.240.120.2 media", false)]
         [InlineData("* cdn.sstatic.net script", "stackexchange.com sstatic.net script", true)]
+        [InlineData("* youtube.com *", "* youtube.com media", true)]
+        [InlineData("* youtube.com media", "* youtube.com *", true)]
         public void TestCovers(string r1, string r2, bool result)
         {
             var rule1 = new UMatrixRule(r1 + " block");

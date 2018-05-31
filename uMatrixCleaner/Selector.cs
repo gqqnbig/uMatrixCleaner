@@ -51,14 +51,16 @@ namespace uMatrixCleaner
             if (EvaluateRelationship(other, out var a, out var b, out var c) == false)
                 return false;
 
-            return a.GetValueOrDefault(true) || b.GetValueOrDefault(true) || c;
+            return a.GetValueOrDefault(true) || b.GetValueOrDefault(true) || c.GetValueOrDefault(true);
         }
 
-        private bool EvaluateRelationship(Selector other, out bool? sourceResult, out bool? destinationResult, out bool typeResult)
+        private bool EvaluateRelationship(Selector other, out bool? sourceResult, out bool? destinationResult, out bool? typeResult)
         {
             sourceResult = Source.Covers(other.Source);
             destinationResult = Destination.Covers(other.Destination);
             typeResult = Type.HasFlag(other.Type);
+            if (Type == TypePredicate.All || other.Type == TypePredicate.All)
+                typeResult = null;
 
             if ((Source.IsDomain || Source.IsIP) && (other.Source.IsDomain || other.Source.IsIP)
                 && Source.Value.EndsWith(other.Source.Value) == false && other.Source.Value.EndsWith(Source.Value) == false)
@@ -87,7 +89,7 @@ namespace uMatrixCleaner
             if (EvaluateRelationship(other, out var a, out var b, out var c) == false)
                 return false;
 
-            return a.GetValueOrDefault(false) && b.GetValueOrDefault(false) && c;
+            return a.GetValueOrDefault(false) && b.GetValueOrDefault(false) && c.GetValueOrDefault(false);
         }
 
         /// <summary>
