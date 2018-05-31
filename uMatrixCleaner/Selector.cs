@@ -49,15 +49,9 @@ namespace uMatrixCleaner
         public bool IsSuperOrHasJoint(Selector other)
         {
 
-            if (Source.IsDomain && other.Source.IsDomain && other.Source.Value.EndsWith(Source.Value) == false)
-                return false;
-
             var a = Source.Covers(other.Source);
             if ((Source.IsDomain || Source.IsIP) && (other.Source.IsDomain || other.Source.IsIP)
                                                  && a == false)
-                return false;
-
-            if (Destination.IsDomain && other.Destination.IsDomain && other.Destination.Value.EndsWith(Destination.Value) == false)
                 return false;
 
             //如果我的目标字段是1st-party，对方来源和目标不是1st-party，则不包含
@@ -294,27 +288,6 @@ namespace uMatrixCleaner
                 return null;
 
             return Value == "*" || other.Value.EndsWith(Value);
-        }
-
-        public HostPredicate GetParent()
-        {
-            if (IsDomain)
-            {
-                var subDomainSegmentCount = UMatrixRule.domainParser.Get(Value).SubDomain?.Count(c => c == '.') ?? 0;
-                if (subDomainSegmentCount > 0)
-                    return new HostPredicate(GetLastUrlSegments(Value, subDomainSegmentCount - 1));
-                else
-                    return N1stParty;
-            }
-
-            if (Value == "1st-party")
-                return new HostPredicate("*");
-            else
-            {
-                Debug.Assert(Value == "*");
-                return null;
-            }
-
         }
 
         public override string ToString()
