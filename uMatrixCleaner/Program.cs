@@ -95,7 +95,7 @@ namespace uMatrixCleaner
                 }
                 else
                 {
-                    var cp = mostDetailedSuperRules.FirstOrDefault(r => currentRule.Selector.IsSuperOrHasJoint(r.Selector) == false && r.IsAllow == currentRule.IsAllow);
+                    var cp = mostDetailedSuperRules.FirstOrDefault(s => s.Selector.IsSuperOf(currentRule.Selector) && s.IsAllow == currentRule.IsAllow);
                     //如果有一个完全匹配的相同规则，则本规则可以删除
                     if (cp != null)
                     {
