@@ -50,7 +50,7 @@ namespace uMatrixCleaner
 
         public override int GetHashCode()
         {
-            return Selector.Source?.GetHashCode() ?? 0 ^ Selector.Destination?.GetHashCode() ?? 0 ^ Selector.Type.GetHashCode() ^ IsAllow.GetHashCode();
+            return Selector.Source.Value.GetHashCode() ^ Selector.Destination.Value.GetHashCode() ^ Selector.Type.GetHashCode() ^ IsAllow.GetHashCode();
         }
 
         public override string ToString()
