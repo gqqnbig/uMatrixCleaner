@@ -44,15 +44,6 @@ namespace Tests
             Assert.Contains(r1, rules);
             Assert.Contains(r2, rules);
             Assert.Contains(r3, rules);
-
-
-            r1 = new UMatrixRule("* cdn.sstatic.net script allow");
-            r2 = new UMatrixRule("stackexchange.com sstatic.net script allow");
-            rules = new LinkedList<UMatrixRule>(new[] { r1, r2 });
-            Program.Deduplicate(rules, new System.Predicate<UMatrixRule>[0]);
-            Assert.Contains(r1, rules);
-            Assert.Contains(r2, rules);
-
         }
     }
 }

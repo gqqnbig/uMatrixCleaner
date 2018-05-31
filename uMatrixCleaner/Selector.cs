@@ -48,43 +48,24 @@ namespace uMatrixCleaner
         /// <returns></returns>
         public bool IsSuperOrHasJoint(Selector other)
         {
-
-            var a = Source.Covers(other.Source);
-            if ((Source.IsDomain || Source.IsIP) && (other.Source.IsDomain || other.Source.IsIP)
-                                                 && a == false)
+            if (EvaluateRelationship(other, out var a, out var b, out var c) == false)
                 return false;
-
-            //如果我的目标字段是1st-party，对方来源和目标不是1st-party，则不包含
-            if (Destination.Value == "1st-party" && IsNot1stParty(other))
-                return false;
-            //如果我的来源和目标不是1st-party，对方的目标字段是1st-party，则不包含
-            if (other.Destination.Value == "1st-party" && IsNot1stParty(this))
-                return false;
-
-            var b = Destination.Covers(other.Destination);
-            if ((Destination.IsDomain || Destination.IsIP) && (other.Destination.IsDomain || other.Destination.IsIP)
-                                                           && b == false)
-                return false;
-
-            if (Type != TypePredicate.All && other.Type != TypePredicate.All && Type != other.Type)
-                return false;
-
-            var c = Type.HasFlag(other.Type);
 
             return a.GetValueOrDefault(true) || b.GetValueOrDefault(true) || c;
         }
 
-        public bool IsSuperOf(Selector other)
+        private bool EvaluateRelationship(Selector other, out bool? sourceResult, out bool? destinationResult, out bool typeResult)
         {
-            if (Source.IsDomain && other.Source.IsDomain && other.Source.Value.EndsWith(Source.Value) == false)
-                return false;
+            sourceResult = Source.Covers(other.Source);
+            destinationResult = Destination.Covers(other.Destination);
+            typeResult = Type.HasFlag(other.Type);
 
-            var a = Source.Covers(other.Source);
             if ((Source.IsDomain || Source.IsIP) && (other.Source.IsDomain || other.Source.IsIP)
-                                                 && a == false)
+                && Source.Value.EndsWith(other.Source.Value) == false && other.Source.Value.EndsWith(Source.Value) == false)
                 return false;
 
-            if (Destination.IsDomain && other.Destination.IsDomain && other.Destination.Value.EndsWith(Destination.Value) == false)
+            if ((Destination.IsDomain || Destination.IsIP) && (other.Destination.IsDomain || other.Destination.IsIP) && destinationResult == false
+                && Destination.Value.EndsWith(other.Destination) == false && other.Destination.Value.EndsWith(Destination.Value) == false)
                 return false;
 
             //如果我的目标字段是1st-party，对方来源和目标不是1st-party，则不包含
@@ -94,15 +75,17 @@ namespace uMatrixCleaner
             if (other.Destination.Value == "1st-party" && IsNot1stParty(this))
                 return false;
 
-            var b = Destination.Covers(other.Destination);
-            if ((Destination.IsDomain || Destination.IsIP) && (other.Destination.IsDomain || other.Destination.IsIP)
-                                                           && b == false)
-                return false;
-
             if (Type != TypePredicate.All && other.Type != TypePredicate.All && Type != other.Type)
                 return false;
 
-            var c = Type.HasFlag(other.Type);
+            return true;
+        }
+
+
+        public bool IsSuperOf(Selector other)
+        {
+            if (EvaluateRelationship(other, out var a, out var b, out var c) == false)
+                return false;
 
             return a.GetValueOrDefault(false) && b.GetValueOrDefault(false) && c;
         }
