@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace uMatrixCleaner
 {
-    
+
     public class Selector
     {
         /// <summary>
@@ -16,8 +16,6 @@ namespace uMatrixCleaner
         public HostPredicate Source { get; }
         public HostPredicate Destination { get; }
         public TypePredicate Type { get; }
-
-        private int specificity = -1;
 
         public Selector(HostPredicate source, HostPredicate destination, TypePredicate type, Selector selector) : this(source, destination, type)
         {
@@ -38,9 +36,7 @@ namespace uMatrixCleaner
         {
             get
             {
-                if (specificity == -1)
-                    specificity = Source.Specificity * 100 + Destination.Specificity * 10 + (Type == TypePredicate.All ? 0 : 1);
-                return specificity;
+                return Source.Specificity * 100 + Destination.Specificity * 10 + (Type == TypePredicate.All ? 0 : 1);
             }
         }
 
