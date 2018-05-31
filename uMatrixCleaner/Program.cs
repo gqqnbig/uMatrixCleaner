@@ -87,15 +87,15 @@ namespace uMatrixCleaner
                     continue;
 
                 var highestSpecificity = superRules.Max(r => r.Selector.Specificity);
-                var mostDetailedRules = superRules.Where(r => r.Selector.Specificity == highestSpecificity);
+                var mostDetailedSuperRules = superRules.Where(r => r.Selector.Specificity == highestSpecificity);
 
-                if (mostDetailedRules.Any(r => currentRule.Selector.IsSuperOrHasJoint(r.Selector) && r.IsAllow != currentRule.IsAllow))
+                if (mostDetailedSuperRules.Any(r => currentRule.Selector.IsSuperOrHasJoint(r.Selector) && r.IsAllow != currentRule.IsAllow))
                 {
                     //如果有一个部分匹配的相反规则，则本规则不能删除
                 }
                 else
                 {
-                    var cp = superRules.FirstOrDefault(r => currentRule.Selector.IsSuperOrHasJoint(r.Selector) == false && r.IsAllow == currentRule.IsAllow);
+                    var cp = mostDetailedSuperRules.FirstOrDefault(r => currentRule.Selector.IsSuperOrHasJoint(r.Selector) == false && r.IsAllow == currentRule.IsAllow);
                     //如果有一个完全匹配的相同规则，则本规则可以删除
                     if (cp != null)
                     {
