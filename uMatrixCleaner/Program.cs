@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace uMatrixCleaner
 {
@@ -55,15 +56,15 @@ namespace uMatrixCleaner
                 if (examptedFromRemoving.Any(p => p(currentRule)))
                     continue;
 
-                var mostDetailedSuperRules = GetMostDetailedSuperRules(currentRule, rules);
+                var mostDetailedSuperOrJointRules = GetMostDetailedSuperOrJointRules(currentRule, rules);
 
-                if (mostDetailedSuperRules.Any(r => currentRule.Selector.HasJoint(r.Selector) && r.IsAllow != currentRule.IsAllow))
+                if (mostDetailedSuperOrJointRules.Any(r => currentRule.Selector.HasJoint(r.Selector) && r.IsAllow != currentRule.IsAllow))
                 {
                     //如果有一个部分匹配的相反规则，则本规则不能删除
                 }
                 else
                 {
-                    var cp = mostDetailedSuperRules.FirstOrDefault(s => s.Selector.IsSuperOf(currentRule.Selector) && s.IsAllow == currentRule.IsAllow);
+                    var cp = mostDetailedSuperOrJointRules.FirstOrDefault(s => s.Selector.IsSuperOf(currentRule.Selector) && s.IsAllow == currentRule.IsAllow);
                     //如果有一个完全匹配的相同规则，则本规则可以删除
                     if (cp != null)
                     {
@@ -74,7 +75,7 @@ namespace uMatrixCleaner
             }
         }
 
-        private static UMatrixRule[] GetMostDetailedSuperRules(UMatrixRule rule, IEnumerable<UMatrixRule> rules)
+        private static UMatrixRule[] GetMostDetailedSuperOrJointRules(UMatrixRule rule, IEnumerable<UMatrixRule> rules)
         {
             //superRules是包含当前规则的规则
             var superRules = (from r in rules
@@ -85,68 +86,64 @@ namespace uMatrixCleaner
                 return Array.Empty<UMatrixRule>();//不用new UMatrixRule[0]因为Array.Empty()会重用对象。
 
             var highestSpecificity = superRules.Max(r => r.Selector.Specificity);
-            var mostDetailedSuperRules = superRules.Where(r => r.Selector.Specificity == highestSpecificity);
-            return mostDetailedSuperRules.ToArray();
+            var mostDetailedSuperOrJointRules = superRules.Where(r => r.Selector.Specificity == highestSpecificity);
+            return mostDetailedSuperOrJointRules.ToArray();
         }
 
-        //private static void Merge(LinkedList<UMatrixRule> rules)
-        //{
-        //    LinkedListNode<UMatrixRule> nextNode = rules.First;
-        //    while (nextNode != null)
-        //    {
-        //        var currentNode = nextNode;
-        //        var currentRule = currentNode.Value;
-        //        nextNode = currentNode.Next;
+        private static void Merge(LinkedList<UMatrixRule> rules, int thresholdToRemove)
+        {
+            HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
 
 
-        //        var generalizedRule = currentRule.Generalize();
-        //        while (generalizedRule != null)
-        //        {
-        //            var subsetRules = from r in rules
-        //                              where generalizedRule.IsProperSuperOf(r) && r.IsAllow == generalizedRule.IsAllow
-        //                              select r;
-
-        //            foreach (var subsetRule in subsetRules)
-        //            {
-        //                var superRules = rules.Any(r => r.IsSuperOrHasJoint(subsetRule));
-        //            }
-
-        //            var coveredRules = GetCoveredRules(currentRuleNode.Next, generalizedRule);
-
-        //            //如果GetClosestParent返回null，说明该规则不能再一般化，说明这是顶级规则，不能删除。
-        //            var toRemove = coveredRules.Where(r => GetClosestParent(r.Value, rules, false)?.IsAllow == r.Value.IsAllow && examptedFromRemoving.Any(p => p(r.Value)) == false).ToList();
-        //            if (toRemove.Count >= groupingThreshold)
-        //            {
-        //                Merge(rules, generalizedRule, toRemove);
-        //            }
-
-        //            generalizedRule = generalizedRule.Generalize();
-        //            isGeneralized = true;
-        //        }
-        //    }
+            LinkedListNode<UMatrixRule> nextNode = rules.First;
+            while (nextNode != null)
+            {
+                var currentNode = nextNode;
+                var currentRule = currentNode.Value;
+                nextNode = currentNode.Next;
 
 
-        //    var conflictingRule = FindConflictingRule(generalizedRule, rules);
+                var g = currentRule.Selector.Generalize();
+                while (g != null)
+                {
+                    var generalizedRule = new UMatrixRule(g.Source, g.Destination, g.Type, currentRule.IsAllow);
+                    if (notWorkingRules.Contains(generalizedRule))
+                        break;
 
-        //    if (conflictingRule == null)
-        //    {
-        //        Console.Write("合并");
-        //        foreach (var node in toRemove)
-        //        {
-        //            Console.WriteLine("\t" + node.Value);
-        //            rules.Remove(node);
-        //        }
+                    var subsetRules = (from r in rules.EnumerateNodes()
+                                       where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
+                                       select r).ToArray();
 
-        //        Console.WriteLine("==>\t为" + generalizedRule);
+                    if (subsetRules.Length >= thresholdToRemove)
+                    {
+                        var toRemove = (from subsetRule in subsetRules
+                                        where GetMostDetailedSuperOrJointRules(subsetRule.Value, rules).Any(r => r.Selector.HasJoint(subsetRule.Value.Selector) && r.IsAllow != subsetRule.Value.IsAllow) == false
+                                        select subsetRule).ToArray();
 
-        //        rules.AddFirst(generalizedRule);
-        //    }
-        //    else
-        //    {
-        //        Console.WriteLine("未能合并" + string.Join("\r\n\t", toRemove.Select(n => n.Value)));
-        //        Console.WriteLine("==>\t为" + generalizedRule);
-        //        Console.WriteLine($"\t因为{conflictingRule}具有更高优先级");
-        //    }
-        //}
+                        if (toRemove.Length >= thresholdToRemove)
+                        {
+                            Debug.Assert(toRemove.Contains(currentNode));
+
+                            rules.AddBefore(currentNode, generalizedRule);
+
+                            Console.Write("合并");
+                            foreach (var node in toRemove)
+                            {
+                                Console.WriteLine("\t\t" + node.Value);
+                                rules.Remove(node);
+                            }
+                            Console.WriteLine("\t为" + generalizedRule);
+
+                        }
+
+                        notWorkingRules.Add(generalizedRule);
+
+                        break; //不需要再一般化，已经有另外的规则阻止删除了。
+                    }
+                    g = g.Generalize();
+                    //g = null;
+                }
+            }
+        }
     }
 }
