@@ -32,6 +32,7 @@ namespace Tests
 
         [Theory]
         [InlineData("* cdn.sstatic.net script", "stackexchange.com sstatic.net script", false)]
+        [InlineData("acfun.tv cdn.aixifan.com *", "acfun.tv cdn.aixifan.com other", true)]
         public void TestIsProperSuperOf(string r1, string r2, bool result)
         {
             var rule1 = new UMatrixRule(r1 + " block");

@@ -59,7 +59,7 @@ namespace uMatrixCleaner
             sourceResult = Source.Covers(other.Source);
             destinationResult = Destination.Covers(other.Destination);
             typeResult = Type.HasFlag(other.Type);
-            if (Type == TypePredicate.All || other.Type == TypePredicate.All)
+            if (Type == TypePredicate.All && other.Type == TypePredicate.All)
                 typeResult = null;
 
             if ((Source.IsDomain || Source.IsIP) && (other.Source.IsDomain || other.Source.IsIP)
