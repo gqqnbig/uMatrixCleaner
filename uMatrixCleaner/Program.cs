@@ -148,14 +148,5 @@ namespace uMatrixCleaner
         //        Console.WriteLine($"\t因为{conflictingRule}具有更高优先级");
         //    }
         //}
-
-
-
-        public static UMatrixRule GetClosestParent(UMatrixRule rule, ICollection<UMatrixRule> list, bool allowPartial)
-        {
-            var closestParent = list.Where(r => r.Equals(rule) == false && r.Selector.IsSuperOrHasJoint(rule.Selector))
-                                .OrderByDescending(r => r.Selector.Specificity).FirstOrDefault();
-            return closestParent;
-        }
     }
 }
