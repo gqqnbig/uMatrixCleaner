@@ -166,37 +166,6 @@ namespace uMatrixCleaner
         //    }
         //}
 
-        /// <summary>
-        /// 搜索list，查看是否有规则与指定的rule过滤器相同，但操作不同。
-        /// </summary>
-        /// <param name="rule"></param>
-        /// <param name="list"></param>
-        /// <returns></returns>
-        public static UMatrixRule FindConflictingRule(UMatrixRule rule, ICollection<UMatrixRule> list)
-        {
-            var closestParent = GetClosestParent(rule, list, true);
-            if (closestParent?.IsAllow != rule.IsAllow)
-                return closestParent;
-            else
-                return null;
-
-
-
-            //UMatrixRule conflictingRule = null;
-            //HostPredicate parentDestination = rule.Destination.GetParent();
-            //while (parentDestination != null)
-            //{
-            //    conflictingRule = list.FirstOrDefault(r =>
-            //        r.Destination.Equals(parentDestination) && r.IsSuperOrHasJoint(rule) &&
-            //        r.IsAllow != rule.IsAllow);
-            //    if (conflictingRule != null)
-            //        break;
-
-            //    parentDestination = parentDestination.GetParent();
-            //}
-
-            //return conflictingRule;
-        }
 
 
         public static UMatrixRule GetClosestParent(UMatrixRule rule, ICollection<UMatrixRule> list, bool allowPartial)
