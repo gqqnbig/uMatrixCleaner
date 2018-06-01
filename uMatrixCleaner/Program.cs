@@ -93,7 +93,7 @@ namespace uMatrixCleaner
         public static void Merge(LinkedList<UMatrixRule> rules, int thresholdToRemove)
         {
             HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
-
+            List<UMatrixRule> newRules = new List<UMatrixRule>();
 
             LinkedListNode<UMatrixRule> nextNode = rules.First;
             while (nextNode != null)
@@ -138,7 +138,10 @@ namespace uMatrixCleaner
                             {
                                 Debug.Assert(toRemove.Contains(currentNode));
 
-                                rules.AddBefore(currentNode, generalizedRule);
+                                newRules.Add(generalizedRule);//新规则不再参与合并，否则会有叠加效应
+
+                                while (nextNode != null && toRemove.Contains(nextNode))
+                                    nextNode = nextNode.Next;
 
                                 Console.Write("合并");
                                 foreach (var node in toRemove)
@@ -160,9 +163,11 @@ namespace uMatrixCleaner
                         }
                     }
                     g = g.Generalize();
-                    //g = null;
                 }
             }
+
+            foreach (var newRule in newRules)
+                rules.AddLast(newRule);
         }
     }
 }
