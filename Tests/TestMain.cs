@@ -43,9 +43,11 @@ namespace Tests
 * 1st-party * allow
 * 1st-party frame allow
 * 1st-party script allow";
-            var rules = new LinkedList<UMatrixRule>(from line in input.Split("\r\n")
-                                                    where line.Length > 0
-                                                    select new UMatrixRule(line));
+            var baseRules = (from line in input.Split("\r\n")
+                             where line.Length > 0
+                             select new UMatrixRule(line)).ToList().AsReadOnly();
+
+            var rules = new LinkedList<UMatrixRule>(baseRules);
             var r1 = new UMatrixRule("appledaily.com rtnvideo1.appledaily.com.tw media allow");
             var r2 = new UMatrixRule("appledaily.com video.appledaily.com.tw media allow");
 
@@ -54,9 +56,23 @@ namespace Tests
 
             Program.Merge(rules, 2);
 
-            Assert.DoesNotContain( r1,rules);
+            Assert.DoesNotContain(r1, rules);
             Assert.DoesNotContain(r2, rules);
             var r3 = new UMatrixRule("appledaily.com appledaily.com.tw media allow");
+            Assert.Contains(r3, rules);
+
+
+            rules = new LinkedList<UMatrixRule>(baseRules);
+            r1 = new UMatrixRule("qq.com captcha.qq.com script allow");
+            r2 = new UMatrixRule("qq.com check.ptlogin2.qq.com script allow");
+            r3 = new UMatrixRule("mp.weixin.qq.com qq.com script block");
+
+            rules.AddLast(r1);
+            rules.AddLast(r2);
+            rules.AddLast(r3);
+            Program.Merge(rules, 2);
+            Assert.Contains(r1, rules);
+            Assert.Contains(r2, rules);
             Assert.Contains(r3, rules);
         }
     }
