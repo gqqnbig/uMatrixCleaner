@@ -19,6 +19,14 @@ namespace uMatrixCleaner
 
         public Selector Selector { get; }
 
+        public int Priority
+        {
+            get
+            {
+                return Selector.Specificity * 10 + (IsAllow ? 0 : 1);
+            }
+        }
+
         public UMatrixRule(HostPredicate source, HostPredicate destination, TypePredicate type, bool isAllow)
         {
             if (HostPredicate.N1stParty.Equals(source))

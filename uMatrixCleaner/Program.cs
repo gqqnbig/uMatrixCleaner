@@ -90,7 +90,7 @@ namespace uMatrixCleaner
             return mostDetailedSuperOrJointRules.ToArray();
         }
 
-        private static void Merge(LinkedList<UMatrixRule> rules, int thresholdToRemove)
+        public static void Merge(LinkedList<UMatrixRule> rules, int thresholdToRemove)
         {
             HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
 
@@ -110,35 +110,54 @@ namespace uMatrixCleaner
                     if (notWorkingRules.Contains(generalizedRule))
                         break;
 
-                    var subsetRules = (from r in rules.EnumerateNodes()
-                                       where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
-                                       select r).ToArray();
-
-                    if (subsetRules.Length >= thresholdToRemove)
+                    if ((g.Source.IsDomain || g.Source.IsIP) && g.Destination.IsDomain && g.Type != TypePredicate.All)
                     {
-                        var toRemove = (from subsetRule in subsetRules
-                                        where GetMostDetailedSuperOrJointRules(subsetRule.Value, rules).Any(r => r.Selector.HasJoint(subsetRule.Value.Selector) && r.IsAllow != subsetRule.Value.IsAllow) == false
-                                        select subsetRule).ToArray();
+                        var subRules = (from r in rules.EnumerateNodes()
+                                        where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
+                                        select r).ToArray();
 
-                        if (toRemove.Length >= thresholdToRemove)
+                        if (subRules.Length >= thresholdToRemove)
                         {
-                            Debug.Assert(toRemove.Contains(currentNode));
-
-                            rules.AddBefore(currentNode, generalizedRule);
-
-                            Console.Write("合并");
-                            foreach (var node in toRemove)
+                            var toRemove = new List<LinkedListNode<UMatrixRule>>();
+                            foreach (var subRule in subRules)
                             {
-                                Console.WriteLine("\t\t" + node.Value);
-                                rules.Remove(node);
+                                var superOrJointRules = GetMostDetailedSuperOrJointRules(subRule.Value, rules);
+
+                                if (superOrJointRules.Any(s => s.Priority > generalizedRule.Priority))
+                                {
+                                    //不能删除
+                                }
+                                else
+                                {
+                                    toRemove.Add(subRule);
+                                }
                             }
-                            Console.WriteLine("\t为" + generalizedRule);
 
+
+                            if (toRemove.Count >= thresholdToRemove)
+                            {
+                                Debug.Assert(toRemove.Contains(currentNode));
+
+                                rules.AddBefore(currentNode, generalizedRule);
+
+                                Console.Write("合并");
+                                foreach (var node in toRemove)
+                                {
+                                    Console.WriteLine("\t\t" + node.Value);
+                                    rules.Remove(node);
+                                }
+                                Console.WriteLine("\t为" + generalizedRule);
+
+                            }
+
+                            break;
+                            
+                            //var toRemove = (from subsetRule in subsetRules
+                            //                where GetMostDetailedSuperOrJointRules(subsetRule.Value, rules).Any(r => r.Selector.HasJoint(subsetRule.Value.Selector) && r.IsAllow != subsetRule.Value.IsAllow) == false
+                            //                select subsetRule).ToArray();
+
+                            //notWorkingRules.Add(generalizedRule);
                         }
-
-                        notWorkingRules.Add(generalizedRule);
-
-                        break; //不需要再一般化，已经有另外的规则阻止删除了。
                     }
                     g = g.Generalize();
                     //g = null;
