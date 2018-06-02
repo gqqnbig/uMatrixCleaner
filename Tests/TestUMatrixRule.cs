@@ -30,6 +30,15 @@ namespace Tests
             Assert.Equal(result, rule1.Selector.IsSuperOrHasJoint(rule2.Selector));
         }
 
+        [Fact(DisplayName = "Domains ending with the same string are not subdomain.")]
+        public static void TestIsSuperOrHasJointWithAlikeDomains()
+        {
+            var rule1 = new UMatrixRule("licdn.com * script block");
+            var rule2 = new UMatrixRule("alicdn.com * script block");
+
+            Assert.False(rule1.Selector.IsSuperOrHasJoint(rule2.Selector));
+        }
+
         [Theory]
         [InlineData("* cdn.sstatic.net script", "stackexchange.com sstatic.net script", false)]
         [InlineData("acfun.tv cdn.aixifan.com *", "acfun.tv cdn.aixifan.com other", true)]
