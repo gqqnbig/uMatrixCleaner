@@ -139,7 +139,8 @@ namespace uMatrixCleaner
 
                         if (toRemove.Count >= thresholdToRemove)
                         {
-                            Debug.Assert(toRemove.Contains(currentNode));
+                            Debug.Assert(toRemove.Contains(currentNode) || toRemove.Contains(currentNode) == false,
+                                "当前规则可能被更高优先级规则锁定，但当前规则的推广规则可能可用于合并其他规则。");
 
                             newRules.Add(generalizedRule);//新规则不再参与合并，否则会有叠加效应
 
@@ -172,8 +173,8 @@ namespace uMatrixCleaner
         {
             //superRules是包含当前规则的规则
             var superRules = (from r in rules
-                where r.Equals(rule) == false && r.Selector.IsSuperOrHasJoint(rule.Selector)
-                select r).ToArray();
+                              where r.Equals(rule) == false && r.Selector.IsSuperOrHasJoint(rule.Selector)
+                              select r).ToArray();
 
             if (superRules.Length == 0)
                 return Array.Empty<UMatrixRule>();//不用new UMatrixRule[0]因为Array.Empty()会重用对象。
