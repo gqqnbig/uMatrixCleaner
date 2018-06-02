@@ -143,7 +143,7 @@ namespace uMatrixCleaner
                         var toRemove = new List<LinkedListNode<UMatrixRule>>();
                         foreach (var subRule in subRules)
                         {
-                            var superOrJointRules = GetHighestPrioritySuperOrJointRules(subRule.Value, rules);
+                            var superOrJointRules = GetHighestPrioritySuperOrJointRules(subRule.Value, rules.Where(r => r.IsAllow != subRule.Value.IsAllow));
 
                             if (superOrJointRules.Any(s => s.Priority > generalizedRule.Priority))
                             {
