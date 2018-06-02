@@ -330,13 +330,12 @@ namespace uMatrixCleaner
 
             if (IsDomain)
             {
-                var d1 = domainParser.Get(Value);
-                var d2 = domainParser.Get(other.Value);
-                if (d1.RegistrableDomain != d2.RegistrableDomain)
-                    return false;
 
-                var longSubDomainSegments = d1.SubDomain?.Split('.') ?? Array.Empty<string>();
-                var shortSubDomainSegments = d2.SubDomain?.Split('.') ?? Array.Empty<string>();
+                //可能一个主机谓词是com，另一个是google.com，则后者被会判断为前者的子域名。
+                //如果要严谨一点，需要调用DomainParser，这个调用很慢。
+
+                var longSubDomainSegments = Value.Split('.');
+                var shortSubDomainSegments = other.Value.Split('.');
 
 
                 for (int i = longSubDomainSegments.Length - 1, j = shortSubDomainSegments.Length - 1; i >= 0 && j >= 0; i--, j--)
@@ -348,7 +347,7 @@ namespace uMatrixCleaner
                 return true;
             }
 
-            throw new NotSupportedException($"不能对{Value}调用IsSubDomain()。");
+            throw new NotSupportedException($"不能对{Value}调用{nameof(IsSubDomain)}()。");
         }
 
 
