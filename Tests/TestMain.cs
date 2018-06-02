@@ -129,5 +129,27 @@ namespace Tests
             Assert.Contains(new UMatrixRule("* baidu.com cookie block"), rules);
 
         }
+
+        [Fact(DisplayName ="Merge wildcard type with action block")]
+        public static void TestMergeTypeWildcardBlock()
+        {
+            var input = @"
+* * * block
+* * css allow
+* * frame block
+* * image allow
+* * script block
+* 1st-party * allow
+* 1st-party frame allow
+* 1st-party script allow
+* baidu.com css block
+* baidu.com image block";
+            var rules = new LinkedList<UMatrixRule>(from line in input.Split("\r\n")
+                where line.Length > 0
+                select new UMatrixRule(line));
+            Program.Merge(rules, 2);
+            Assert.Contains(new UMatrixRule("* baidu.com * block"), rules);
+
+        }
     }
 }
