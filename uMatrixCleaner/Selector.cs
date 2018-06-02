@@ -18,6 +18,14 @@ namespace uMatrixCleaner
         public HostPredicate Destination { get; }
         public TypePredicate Type { get; }
 
+        public Selector(string str)
+        {
+            string[] parts = str.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            Source = new HostPredicate(parts[0]);
+            Destination = new HostPredicate(parts[1]);
+            Type = parts[2] == "*" ? TypePredicate.All : (TypePredicate)Enum.Parse(typeof(TypePredicate), parts[2], true);
+        }
+
         public Selector(HostPredicate source, HostPredicate destination, TypePredicate type, Selector selector) : this(source, destination, type)
         {
             this.originalRule = selector;
