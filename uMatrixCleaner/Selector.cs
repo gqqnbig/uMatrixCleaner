@@ -245,18 +245,7 @@ namespace uMatrixCleaner
         /// <summary>
         /// 返回IPv4、DNS、Basic（通配符）。
         /// </summary>
-        public UriHostNameType HostType
-        {
-            get
-            {
-                if (Value.All(c => c == '.' || Char.IsDigit(c)))
-                    return UriHostNameType.IPv4;
-                else if (Value.Contains("."))
-                    return UriHostNameType.Dns;
-                else
-                    return UriHostNameType.Basic;
-            }
-        }
+        public UriHostNameType HostType { get; }
 
         public bool IsIP => HostType == UriHostNameType.IPv4;
 
@@ -286,6 +275,13 @@ namespace uMatrixCleaner
         public HostPredicate(string value)
         {
             this.Value = value;
+
+            if (Value.All(c => c == '.' || Char.IsDigit(c)))
+                HostType = UriHostNameType.IPv4;
+            else if (Value.Contains("."))
+                HostType = UriHostNameType.Dns;
+            else
+                HostType = UriHostNameType.Basic;
         }
 
         /// <summary>
