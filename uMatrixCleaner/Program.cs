@@ -143,7 +143,7 @@ namespace uMatrixCleaner
                         var toRemove = new List<LinkedListNode<UMatrixRule>>();
                         foreach (var subRule in subRules)
                         {
-                            var superOrJointRules = GetHighestPrioritySuperOrJointRules(subRule.Value, rules.Where(r => r.IsAllow != subRule.Value.IsAllow));
+                            var superOrJointRules = GetHighestPrioritySuperOrJointRules(subRule.Value, rules.Where(r => r.IsAllow != subRule.Value.IsAllow && r.Equals(subRule.Value) == false));
 
                             if (superOrJointRules.Any(s => s.Priority > generalizedRule.Priority))
                             {
@@ -194,7 +194,7 @@ namespace uMatrixCleaner
         {
             //superRules是包含当前规则的规则
             var superRules = (from r in rules
-                              where r.Equals(rule) == false && r.Selector.IsSuperOrHasJoint(rule.Selector)
+                              where r.Selector.IsSuperOrHasJoint(rule.Selector)
                               select r).ToArray();
 
             if (superRules.Length == 0)
