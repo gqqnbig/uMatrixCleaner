@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using Nager.PublicSuffix;
 
 namespace uMatrixCleaner
 {
@@ -63,11 +64,11 @@ namespace uMatrixCleaner
                 typeResult = null;
 
             if ((Source.IsDomain || Source.IsIP) && (other.Source.IsDomain || other.Source.IsIP)
-                && Source.Value.EndsWith(other.Source.Value) == false && other.Source.Value.EndsWith(Source.Value) == false)
+                && Source.IsSubDomain(other.Source) == false && other.Source.IsSubDomain(Source) == false)
                 return false;
 
             if ((Destination.IsDomain || Destination.IsIP) && (other.Destination.IsDomain || other.Destination.IsIP) && destinationResult == false
-                && Destination.Value.EndsWith(other.Destination) == false && other.Destination.Value.EndsWith(Destination.Value) == false)
+                && Destination.IsSubDomain(other.Destination) == false && other.Destination.IsSubDomain(Destination) == false)
                 return false;
 
             //如果我的目标字段是1st-party，对方来源和目标不是1st-party，则不包含
@@ -139,7 +140,7 @@ namespace uMatrixCleaner
             //URL可以到顶级域，但我这里不允许。
 
             string generalizedDestination;
-            if (Destination.IsDomain && string.IsNullOrEmpty(UMatrixRule.domainParser.Get(Destination).SubDomain) == false)
+            if (Destination.IsDomain && String.IsNullOrEmpty(HostPredicate.domainParser.Get(Destination).SubDomain) == false)
                 generalizedDestination = Destination.Value.Substring(Destination.Value.IndexOf('.') + 1);
             else if (Destination.Value == Source.Value && Destination.Value != "*")
                 generalizedDestination = "1st-party";
@@ -156,7 +157,7 @@ namespace uMatrixCleaner
 
 
             string generalizedSource;
-            if (Source.IsDomain && string.IsNullOrEmpty(UMatrixRule.domainParser.Get(Source).SubDomain) == false)
+            if (Source.IsDomain && String.IsNullOrEmpty(HostPredicate.domainParser.Get(Source).SubDomain) == false)
             {
                 int p = Source.Value.IndexOf('.');
                 generalizedSource = Source.Value.Substring(p + 1);
@@ -217,11 +218,39 @@ namespace uMatrixCleaner
     {
         //https://url.spec.whatwg.org/#host-representation ，Host是Domain或IP的统称。
 
+
+        internal static readonly DomainParser domainParser = new DomainParser(new FileTldRuleProvider("public_suffix_list.dat"));
+
         public static readonly HostPredicate N1stParty = new HostPredicate("1st-party");
 
-        public bool IsDomain => Value.Contains(".") && IsIP == false;
+#if DEBUG
+        static HostPredicate()
+        {
+            //预先初始化DomainParser，否则调试时容易发送求值超时。
+            domainParser.Get("www.google.com");
+        }
+#endif
 
-        public bool IsIP => Value.All(c => c == '.' || char.IsDigit(c)); //目前仅支持IPv4
+        public bool IsDomain => HostType == UriHostNameType.Dns;
+
+
+        /// <summary>
+        /// 返回IPv4、DNS、Basic（通配符）。
+        /// </summary>
+        public UriHostNameType HostType
+        {
+            get
+            {
+                if (Value.All(c => c == '.' || Char.IsDigit(c)))
+                    return UriHostNameType.IPv4;
+                else if (Value.Contains("."))
+                    return UriHostNameType.Dns;
+                else
+                    return UriHostNameType.Basic;
+            }
+        }
+
+        public bool IsIP => HostType == UriHostNameType.IPv4;
 
         public string Value { get; }
 
@@ -239,7 +268,7 @@ namespace uMatrixCleaner
                     else if (IsIP)
                         specificity = 1;
                     else
-                        specificity = 1 + ((UMatrixRule.domainParser.Get(Value).SubDomain?.Count(c => c == '.') + 1) ?? 0); //Null合并运算符的优先级比加号低，所以加号会先算，所以要用括号包起来。
+                        specificity = 1 + ((domainParser.Get(Value).SubDomain?.Count(c => c == '.') + 1) ?? 0); //Null合并运算符的优先级比加号低，所以加号会先算，所以要用括号包起来。
                 }
 
                 return specificity;
@@ -257,22 +286,63 @@ namespace uMatrixCleaner
         /// <returns></returns>
         public string GetRootDomain()
         {
-            if (IsDomain == false)
-                throw new NotSupportedException($"当地址谓词不是URL时，不能调用{nameof(GetRootDomain)}。");
             if (IsIP)
-                throw new NotSupportedException($"当地址谓词是IP时，不能调用{nameof(GetRootDomain)}。");
+                return Value;
+            if (IsDomain == false)
+                throw new NotSupportedException($"地址谓词{Value}不是域名，因此不能调用{nameof(GetRootDomain)}。");
 
-            var domainName = UMatrixRule.domainParser.Get(Value);
+            var domainName = domainParser.Get(Value);
 
             if (domainName == null)
                 return Value;
 
-            var subDomain = domainName.SubDomain;
-            if (subDomain == null)
-                return Value;
-            else
-                return Value.Substring(subDomain.Length + 1);//去掉.
+            return domainName.RegistrableDomain;
         }
+
+        /// <summary>
+        /// 自己是自己的子域名
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool IsSubDomain(HostPredicate other)
+        {
+#if DEBUG
+            var st = new StackTrace(false);
+            var f = st.GetFrame(1);
+            if (f.GetMethod().Name != nameof(IsSubDomain))
+                Debug.Assert(IsDomain == false || this.IsSubDomain(this));
+#endif
+
+            if (other.HostType == UriHostNameType.Basic)
+                return false;
+
+            if (IsIP)
+                return Value == other.Value;
+
+
+            if (IsDomain)
+            {
+                var d1 = domainParser.Get(Value);
+                var d2 = domainParser.Get(other.Value);
+                if (d1.RegistrableDomain != d2.RegistrableDomain)
+                    return false;
+
+                var longSubDomainSegments = d1.SubDomain?.Split('.') ?? Array.Empty<string>();
+                var shortSubDomainSegments = d2.SubDomain?.Split('.') ?? Array.Empty<string>();
+
+
+                for (int i = longSubDomainSegments.Length - 1, j = shortSubDomainSegments.Length - 1; i >= 0 && j >= 0; i--, j--)
+                {
+                    if (longSubDomainSegments[i] != shortSubDomainSegments[j])
+                        return false;
+                }
+
+                return true;
+            }
+
+            throw new NotSupportedException($"不能对{Value}调用IsSubDomain()。");
+        }
+
 
 
         /// <summary>
@@ -307,6 +377,7 @@ namespace uMatrixCleaner
         {
             return url.Value;
         }
+
     }
 
 
