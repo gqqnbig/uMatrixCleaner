@@ -117,6 +117,12 @@ namespace uMatrixCleaner
                                     where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
                                     select r).ToArray();
                     }
+                    else if (g.Source.Value == "*" && g.Destination.IsDomain && g.Type != TypePredicate.All)
+                    {
+                        subRules = (from r in rules.EnumerateNodes()
+                                    where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
+                                    select r).ToArray();
+                    }
 
 
                     if (subRules?.Length >= thresholdToRemove)
