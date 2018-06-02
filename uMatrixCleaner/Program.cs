@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -97,6 +98,8 @@ namespace uMatrixCleaner
             HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
             savedSearch = 0;
 
+            var rrManager = new RuleRelationshipManager(rules.ToArray());
+
             List<UMatrixRule> newRules = new List<UMatrixRule>();
 
             LinkedListNode<UMatrixRule> nextNode = rules.First;
@@ -118,33 +121,18 @@ namespace uMatrixCleaner
                     }
 
                     LinkedListNode<UMatrixRule>[] subRules = null;
-                    if ((g.Source.IsDomain || g.Source.IsIP) && g.Destination.IsDomain && g.Type != TypePredicate.All)
-                    {
-                        subRules = (from r in rules.EnumerateNodes()
-                                    where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
-                                    select r).ToArray();
-                    }
-                    else if (g.Source.Value == "*" && g.Destination.IsDomain && g.Type != TypePredicate.All)
-                    {
-                        subRules = (from r in rules.EnumerateNodes()
-                                    where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
-                                    select r).ToArray();
-                    }
-                    else if (g.Source.Value == "*" && g.Type != TypePredicate.All)
-                    {
-                        subRules = (from r in rules.EnumerateNodes()
-                                    where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
-                                    select r).ToArray();
-                    }
+
+                    subRules = (from r in rules.EnumerateNodes()
+                                where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
+                                select r).ToArray();
 
 
-                    if (subRules?.Length >= thresholdToRemove)
+                    if (subRules.Length >= thresholdToRemove)
                     {
-                        var toRemove = new List<LinkedListNode<UMatrixRule>>();
-                        foreach (var subRule in subRules)
+                        var toRemove = new ConcurrentBag<LinkedListNode<UMatrixRule>>();
+                        foreach(var subRule in subRules)
                         {
-                            var superOrJointRules = GetHighestPrioritySuperOrJointRules(subRule.Value, rules.Where(r => r.IsAllow != subRule.Value.IsAllow && r.Equals(subRule.Value) == false));
-
+                            var superOrJointRules = rrManager.GetSuperOrJointRules(subRule.Value).Where(r => r.IsAllow != subRule.Value.IsAllow);
                             if (superOrJointRules.Any(s => s.Priority > generalizedRule.Priority))
                             {
                                 //不能删除
@@ -171,6 +159,8 @@ namespace uMatrixCleaner
                             {
                                 Console.WriteLine("\t\t" + node.Value);
                                 rules.Remove(node);
+
+                                rrManager.NotifyItemDeleted(node.Value);
                             }
 
                             Console.WriteLine("\t为" + generalizedRule);
@@ -188,21 +178,6 @@ namespace uMatrixCleaner
 
             foreach (var newRule in newRules)
                 rules.AddLast(newRule);
-        }
-
-        private static UMatrixRule[] GetHighestPrioritySuperOrJointRules(UMatrixRule rule, IEnumerable<UMatrixRule> rules)
-        {
-            //superRules是包含当前规则的规则
-            var superRules = (from r in rules
-                              where r.Selector.IsSuperOrHasJoint(rule.Selector)
-                              select r).ToArray();
-
-            if (superRules.Length == 0)
-                return Array.Empty<UMatrixRule>();//不用new UMatrixRule[0]因为Array.Empty()会重用对象。
-
-            var priority = superRules.Max(r => r.Priority);
-            var highestPrioritySuperOrJointRules = superRules.Where(r => r.Priority == priority);
-            return highestPrioritySuperOrJointRules.ToArray();
         }
     }
 }
