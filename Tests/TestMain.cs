@@ -90,9 +90,43 @@ namespace Tests
             Assert.DoesNotContain(r1, rules);
             Assert.DoesNotContain(r2, rules);
             Assert.DoesNotContain(r3, rules);
+        }
 
+        [Fact]
+        public static void TestMergeWildcard()
+        {
+            var input = @"
+* * * block
+* www.google.com css allow
+* www.facebook.com css allow";
 
+            var rules = new LinkedList<UMatrixRule>(from line in input.Split("\r\n")
+                                                    where line.Length > 0
+                                                    select new UMatrixRule(line));
+            Program.Merge(rules, 2);
+            Assert.Contains(new UMatrixRule("* * css allow"), rules);
+            Assert.Equal(2, rules.Count);
+        }
 
+        [Fact]
+        public static void TestMergeBlock()
+        {
+            var input = @"
+* * * block
+* * css allow
+* * frame block
+* * image allow
+* * script block
+* 1st-party * allow
+* 1st-party frame allow
+* 1st-party script allow
+* www.baidu.com cookie block
+* tieba.baidu.com cookie block";
+            var rules = new LinkedList<UMatrixRule>(from line in input.Split("\r\n")
+                where line.Length > 0
+                select new UMatrixRule(line));
+            Program.Merge(rules, 2);
+            Assert.Contains(new UMatrixRule("* baidu.com cookie block"), rules);
 
         }
     }

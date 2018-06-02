@@ -90,9 +90,13 @@ namespace uMatrixCleaner
             return mostDetailedSuperOrJointRules.ToArray();
         }
 
+        private static int savedSearch = 0;
+
         public static void Merge(LinkedList<UMatrixRule> rules, int thresholdToRemove)
         {
             HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
+            savedSearch = 0;
+
             List<UMatrixRule> newRules = new List<UMatrixRule>();
 
             LinkedListNode<UMatrixRule> nextNode = rules.First;
@@ -108,7 +112,10 @@ namespace uMatrixCleaner
                 {
                     var generalizedRule = new UMatrixRule(g.Source, g.Destination, g.Type, currentRule.IsAllow);
                     if (notWorkingRules.Contains(generalizedRule))
+                    {
+                        savedSearch++;
                         break;
+                    }
 
                     LinkedListNode<UMatrixRule>[] subRules = null;
                     if ((g.Source.IsDomain || g.Source.IsIP) && g.Destination.IsDomain && g.Type != TypePredicate.All)
@@ -118,6 +125,12 @@ namespace uMatrixCleaner
                                     select r).ToArray();
                     }
                     else if (g.Source.Value == "*" && g.Destination.IsDomain && g.Type != TypePredicate.All)
+                    {
+                        subRules = (from r in rules.EnumerateNodes()
+                                    where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
+                                    select r).ToArray();
+                    }
+                    else if (g.Source.Value == "*" && g.Type != TypePredicate.All)
                     {
                         subRules = (from r in rules.EnumerateNodes()
                                     where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
@@ -148,7 +161,7 @@ namespace uMatrixCleaner
                             Debug.Assert(toRemove.Contains(currentNode) || toRemove.Contains(currentNode) == false,
                                 "当前规则可能被更高优先级规则锁定，但当前规则的推广规则可能可用于合并其他规则。");
 
-                            newRules.Add(generalizedRule);//新规则不再参与合并，否则会有叠加效应
+                            newRules.Add(generalizedRule); //新规则不再参与合并，否则会有叠加效应
 
                             while (nextNode != null && toRemove.Contains(nextNode))
                                 nextNode = nextNode.Next;
@@ -163,6 +176,8 @@ namespace uMatrixCleaner
                             Console.WriteLine("\t为" + generalizedRule);
 
                         }
+                        else
+                            notWorkingRules.Add(generalizedRule);
 
                         break;
                     }
