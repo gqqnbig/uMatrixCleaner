@@ -247,7 +247,7 @@ namespace uMatrixCleaner
                     else if (IsIP)
                         specificity = 1;
                     else
-                        specificity = 1 + (UMatrixRule.domainParser.Get(Value).SubDomain?.Count(c => c == '.') ?? 0); //Null合并运算符的优先级比加号低，所以加号会先算，所以要用括号包起来。
+                        specificity = 1 + ((UMatrixRule.domainParser.Get(Value).SubDomain?.Count(c => c == '.') + 1) ?? 0); //Null合并运算符的优先级比加号低，所以加号会先算，所以要用括号包起来。
                 }
 
                 return specificity;
