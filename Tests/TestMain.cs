@@ -8,7 +8,7 @@ namespace Tests
     public class TestMain
     {
         [Fact]
-        public void TestDeduplicate()
+        public static void TestDeduplicate()
         {
             var r1 = new UMatrixRule("* 1st-party css block");
             var r2 = new UMatrixRule("google.com * css allow");
@@ -32,7 +32,7 @@ namespace Tests
         }
 
         [Fact]
-        public void TestMergeDestination()
+        public static void TestMergeDestination()
         {
             var input = @"
 * * * block
@@ -74,6 +74,26 @@ namespace Tests
             Assert.Contains(r1, rules);
             Assert.Contains(r2, rules);
             Assert.Contains(r3, rules);
+
+
+
+            rules = new LinkedList<UMatrixRule>(baseRules);
+            r1 = new UMatrixRule("thestandnews.com s-static.ak.facebook.com frame allow");
+            r2 = new UMatrixRule("appledaily.com.tw s-static.ak.facebook.com frame allow");
+            r3 = new UMatrixRule("appledaily.com.tw www.facebook.com frame allow");
+
+            rules.AddLast(r1);
+            rules.AddLast(r2);
+            rules.AddLast(r3);
+            Program.Merge(rules, 3);
+            Assert.Contains(new UMatrixRule("* facebook.com frame allow"), rules);
+            Assert.DoesNotContain(r1, rules);
+            Assert.DoesNotContain(r2, rules);
+            Assert.DoesNotContain(r3, rules);
+
+
+
+
         }
     }
 }
