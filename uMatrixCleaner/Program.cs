@@ -15,7 +15,7 @@ namespace uMatrixCleaner
         }
 
 
-        static string Clean(string input)
+        static void Clean(string input)
         {
             var rules = from line in input.Split("\r\n")
                         where line.Length > 0 && line.StartsWith("matrix-off") == false && line.StartsWith("noscript-spoof") == false && line.Contains("#") == false
@@ -32,11 +32,15 @@ namespace uMatrixCleaner
             var workingRules = new LinkedList<UMatrixRule>(rules);
             //Deduplicate(workingRules, examptedFromRemoving);
 
+
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
             Merge(workingRules, 2);
+            sw.Stop();
+            Console.WriteLine($"合并用时{sw.ElapsedMilliseconds}毫秒");
 
 
-
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         /// <summary>
