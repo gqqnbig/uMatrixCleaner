@@ -4,6 +4,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using Microsoft.Extensions.Logging;
+
 namespace uMatrixCleaner
 {
     public class Program
@@ -32,10 +34,13 @@ namespace uMatrixCleaner
             //var workingRules = new LinkedList<UMatrixRule>(rules);
             //Deduplicate(workingRules, examptedFromRemoving);
 
+            var loggerFactory = new LoggerFactory();
+            loggerFactory.AddConsole(true);
+            var logger = loggerFactory.CreateLogger<Program>();
 
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            Merge(rules.ToList(), 2);
+            Merge(rules.ToList(), 2, logger);
             sw.Stop();
             Console.WriteLine($"合并用时{sw.ElapsedMilliseconds}毫秒");
 
@@ -103,7 +108,7 @@ namespace uMatrixCleaner
         /// <param name="rules"></param>
         /// <param name="thresholdToRemove">如果为<see cref="int.MaxValue"/>则只去除重复，不进行合并。</param>
         /// <returns></returns>
-        public static void Merge(List<UMatrixRule> rules, int thresholdToRemove)
+        public static void Merge(List<UMatrixRule> rules, int thresholdToRemove, ILogger logger)
         {
             HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
             savedSearch = 0;
@@ -157,19 +162,20 @@ namespace uMatrixCleaner
 
                             newRules.Add(generalizedRule); //新规则不再参与合并，否则会有叠加效应
 
-                            Console.Write("合并");
+                            var info = "合并" + string.Join("、\r\n    ", toRemove);
+                            info += "\r\n  为" + generalizedRule;
+
                             for (int j = rules.Count - 1; j >= i && toRemove.Count > 0; j--)
                             {
                                 if (toRemove.Remove(rules[j]))
                                 {
-                                    Console.WriteLine("\t\t" + rules[j]);
                                     rrManager.NotifyItemDeleted(rules[j]);
                                     rules[j] = rules[rules.Count - 1];
                                     rules.RemoveAt(rules.Count - 1);
                                 }
                             }
 
-                            Console.WriteLine("\t为" + generalizedRule);
+                            logger.LogInformation(info);
 
                         }
                         else
