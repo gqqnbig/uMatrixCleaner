@@ -47,12 +47,12 @@ namespace Tests
                              where line.Length > 0
                              select new UMatrixRule(line)).ToList().AsReadOnly();
 
-            var rules = new LinkedList<UMatrixRule>(baseRules);
+            var rules = new List<UMatrixRule>(baseRules);
             var r1 = new UMatrixRule("appledaily.com rtnvideo1.appledaily.com.tw media allow");
             var r2 = new UMatrixRule("appledaily.com video.appledaily.com.tw media allow");
 
-            rules.AddLast(r1);
-            rules.AddLast(r2);
+            rules.Add(r1);
+            rules.Add(r2);
 
             Program.Merge(rules, 2);
 
@@ -62,14 +62,14 @@ namespace Tests
             Assert.Contains(r3, rules);
 
 
-            rules = new LinkedList<UMatrixRule>(baseRules);
+            rules = new List<UMatrixRule>(baseRules);
             r1 = new UMatrixRule("qq.com captcha.qq.com script allow");
             r2 = new UMatrixRule("qq.com check.ptlogin2.qq.com script allow");
             r3 = new UMatrixRule("mp.weixin.qq.com qq.com script block");
 
-            rules.AddLast(r1);
-            rules.AddLast(r2);
-            rules.AddLast(r3);
+            rules.Add(r1);
+            rules.Add(r2);
+            rules.Add(r3);
             Program.Merge(rules, 2);
             Assert.Contains(r1, rules);
             Assert.Contains(r2, rules);
@@ -77,14 +77,14 @@ namespace Tests
 
 
 
-            rules = new LinkedList<UMatrixRule>(baseRules);
+            rules = new List<UMatrixRule>(baseRules);
             r1 = new UMatrixRule("thestandnews.com s-static.ak.facebook.com frame allow");
             r2 = new UMatrixRule("appledaily.com.tw s-static.ak.facebook.com frame allow");
             r3 = new UMatrixRule("appledaily.com.tw www.facebook.com frame allow");
 
-            rules.AddLast(r1);
-            rules.AddLast(r2);
-            rules.AddLast(r3);
+            rules.Add(r1);
+            rules.Add(r2);
+            rules.Add(r3);
             Program.Merge(rules, 3);
             Assert.Contains(new UMatrixRule("* facebook.com frame allow"), rules);
             Assert.DoesNotContain(r1, rules);
@@ -100,7 +100,7 @@ namespace Tests
 * www.google.com css allow
 * www.facebook.com css allow";
 
-            var rules = new LinkedList<UMatrixRule>(from line in input.Split("\r\n")
+            var rules = new List<UMatrixRule>(from line in input.Split("\r\n")
                                                     where line.Length > 0
                                                     select new UMatrixRule(line));
             Program.Merge(rules, 2);
@@ -122,15 +122,15 @@ namespace Tests
 * 1st-party script allow
 * www.baidu.com cookie block
 * tieba.baidu.com cookie block";
-            var rules = new LinkedList<UMatrixRule>(from line in input.Split("\r\n")
-                where line.Length > 0
-                select new UMatrixRule(line));
+            var rules = new List<UMatrixRule>(from line in input.Split("\r\n")
+                                                    where line.Length > 0
+                                                    select new UMatrixRule(line));
             Program.Merge(rules, 2);
             Assert.Contains(new UMatrixRule("* baidu.com cookie block"), rules);
 
         }
 
-        [Fact(DisplayName ="Merge wildcard type with action block")]
+        [Fact(DisplayName = "Merge wildcard type with action block")]
         public static void TestMergeTypeWildcardBlock()
         {
             var input = @"
@@ -144,9 +144,9 @@ namespace Tests
 * 1st-party script allow
 * baidu.com css block
 * baidu.com image block";
-            var rules = new LinkedList<UMatrixRule>(from line in input.Split("\r\n")
-                where line.Length > 0
-                select new UMatrixRule(line));
+            var rules = new List<UMatrixRule>(from line in input.Split("\r\n")
+                                                    where line.Length > 0
+                                                    select new UMatrixRule(line));
             Program.Merge(rules, 2);
             Assert.Contains(new UMatrixRule("* baidu.com * block"), rules);
 
