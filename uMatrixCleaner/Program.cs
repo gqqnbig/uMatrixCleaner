@@ -29,13 +29,13 @@ namespace uMatrixCleaner
                 //r=>r.Source.Value=="*" && r.Destination.Value!="*" && (r.Type.HasFlag(TypePredicate.Script) || r.Type.HasFlag(TypePredicate.Frame)),
                 r=>r.Selector.Destination.Value=="simg.sinajs.cn"
             };
-            var workingRules = new LinkedList<UMatrixRule>(rules);
+            //var workingRules = new LinkedList<UMatrixRule>(rules);
             //Deduplicate(workingRules, examptedFromRemoving);
 
 
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            Merge(workingRules, 2);
+            Merge(rules.ToList(), 2);
             sw.Stop();
             Console.WriteLine($"合并用时{sw.ElapsedMilliseconds}毫秒");
 
@@ -97,21 +97,24 @@ namespace uMatrixCleaner
 
         private static int savedSearch = 0;
 
-        public static void Merge(LinkedList<UMatrixRule> rules, int thresholdToRemove)
+        /// <summary>
+        /// 返回新增的规则
+        /// </summary>
+        /// <param name="rules"></param>
+        /// <param name="thresholdToRemove"></param>
+        /// <returns></returns>
+        public static void Merge(List<UMatrixRule> rules, int thresholdToRemove)
         {
             HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
             savedSearch = 0;
 
-            var rrManager = new RuleRelationshipManager(rules.ToArray());
+            var rrManager = new RuleRelationshipManager(rules);
 
             List<UMatrixRule> newRules = new List<UMatrixRule>();
 
-            LinkedListNode<UMatrixRule> nextNode = rules.First;
-            while (nextNode != null)
+            for (int i = 0; i < rules.Count; i++)
             {
-                var currentNode = nextNode;
-                var currentRule = currentNode.Value;
-                nextNode = currentNode.Next;
+                var currentRule = rules[i];
 
 
                 var g = currentRule.Selector.Generalize();
@@ -124,19 +127,17 @@ namespace uMatrixCleaner
                         break;
                     }
 
-                    LinkedListNode<UMatrixRule>[] subRules = null;
-
-                    subRules = (from r in rules.EnumerateNodes()
-                                where g.IsProperSuperOf(r.Value.Selector) && r.Value.IsAllow == currentRule.IsAllow
-                                select r).ToArray();
+                    var subRules = (from r in rules
+                                    where g.IsProperSuperOf(r.Selector) && r.IsAllow == currentRule.IsAllow
+                                    select r).ToArray();
 
 
                     if (subRules.Length >= thresholdToRemove)
                     {
-                        var toRemove = new ConcurrentBag<LinkedListNode<UMatrixRule>>();
-                        foreach(var subRule in subRules)
+                        var toRemove = new HashSet<UMatrixRule>();
+                        foreach (var subRule in subRules)
                         {
-                            var superOrJointRules = rrManager.GetSuperOrJointRules(subRule.Value).Where(r => r.IsAllow != subRule.Value.IsAllow);
+                            var superOrJointRules = rrManager.GetSuperOrJointRules(subRule).Where(r => r.IsAllow != subRule.IsAllow);
                             if (superOrJointRules.Any(s => s.Priority > generalizedRule.Priority))
                             {
                                 //不能删除
@@ -150,21 +151,21 @@ namespace uMatrixCleaner
 
                         if (toRemove.Count >= thresholdToRemove)
                         {
-                            Debug.Assert(toRemove.Contains(currentNode) || toRemove.Contains(currentNode) == false,
+                            Debug.Assert(toRemove.Contains(currentRule) || toRemove.Contains(currentRule) == false,
                                 "当前规则可能被更高优先级规则锁定，但当前规则的推广规则可能可用于合并其他规则。");
 
                             newRules.Add(generalizedRule); //新规则不再参与合并，否则会有叠加效应
 
-                            while (nextNode != null && toRemove.Contains(nextNode))
-                                nextNode = nextNode.Next;
-
                             Console.Write("合并");
-                            foreach (var node in toRemove)
+                            for (int j = rules.Count - 1; j >= i && toRemove.Count > 0; j--)
                             {
-                                Console.WriteLine("\t\t" + node.Value);
-                                rules.Remove(node);
-
-                                rrManager.NotifyItemDeleted(node.Value);
+                                if (toRemove.Remove(rules[j]))
+                                {
+                                    Console.WriteLine("\t\t" + rules[j]);
+                                    rrManager.NotifyItemDeleted(rules[j]);
+                                    rules[j] = rules[rules.Count - 1];
+                                    rules.RemoveAt(rules.Count - 1);
+                                }
                             }
 
                             Console.WriteLine("\t为" + generalizedRule);
@@ -179,9 +180,7 @@ namespace uMatrixCleaner
                     g = g.Generalize();
                 }
             }
-
-            foreach (var newRule in newRules)
-                rules.AddLast(newRule);
+            rules.AddRange(newRules);
         }
     }
 }
