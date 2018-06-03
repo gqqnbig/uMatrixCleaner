@@ -1,5 +1,4 @@
 ﻿using System;
-using Nager.PublicSuffix;
 
 namespace uMatrixCleaner
 {
@@ -9,13 +8,7 @@ namespace uMatrixCleaner
 
         public Selector Selector { get; }
 
-        public int Priority
-        {
-            get
-            {
-                return Selector.Specificity * 10 + (IsAllow ? 0 : 1);
-            }
-        }
+        public int Priority => Selector.Specificity * 10 + (IsAllow ? 0 : 1);
 
         public UMatrixRule(HostPredicate source, HostPredicate destination, TypePredicate type, bool isAllow)
         {
