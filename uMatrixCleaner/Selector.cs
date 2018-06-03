@@ -310,13 +310,14 @@ namespace uMatrixCleaner
         /// <returns></returns>
         public bool IsSubDomain(HostPredicate other)
         {
-#if DEBUG
-            var st = new StackTrace(false);
-            var f = st.GetFrame(1);
-            if (f.GetMethod().Name != nameof(IsSubDomain))
-                Debug.Assert(IsDomain == false || this.IsSubDomain(this));
-#endif
+            Debug.Assert(IsDomain == false || this.IsSubDomainCore(this));
 
+            return IsSubDomainCore(other);
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private bool IsSubDomainCore(HostPredicate other)
+        {
             if (other.HostType == UriHostNameType.Basic)
                 return false;
 
@@ -326,7 +327,6 @@ namespace uMatrixCleaner
 
             if (IsDomain)
             {
-
                 //可能一个主机谓词是com，另一个是google.com，则后者被会判断为前者的子域名。
                 //如果要严谨一点，需要调用DomainParser，这个调用很慢。
 
@@ -345,7 +345,6 @@ namespace uMatrixCleaner
 
             throw new NotSupportedException($"不能对{Value}调用{nameof(IsSubDomain)}()。");
         }
-
 
 
         /// <summary>
