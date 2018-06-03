@@ -3,15 +3,25 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
-
+using System.IO;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace uMatrixCleaner
 {
     public class Program
     {
+        private static ILogger logger = ApplicationLogging.CreateLogger<Program>();
+
         static void Main(string[] args)
         {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            var configuration = builder.Build();
+
+            ApplicationLogging.LoggerFactory.AddConsole(configuration.GetSection("Logging"));
+
             Clean(System.IO.File.ReadAllText(@"D:\Documents\Visual Studio 2017\Projects\uMatrixCleaner\test.txt"));
 
         }
@@ -34,15 +44,12 @@ namespace uMatrixCleaner
             //var workingRules = new LinkedList<UMatrixRule>(rules);
             //Deduplicate(workingRules, examptedFromRemoving);
 
-            var loggerFactory = new LoggerFactory();
-            loggerFactory.AddConsole(true);
-            var logger = loggerFactory.CreateLogger<Program>();
 
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
-            Merge(rules.ToList(), 2, logger);
+            Merge(rules.ToList(), 2);
             sw.Stop();
-            Console.WriteLine($"合并用时{sw.ElapsedMilliseconds}毫秒");
+            logger.LogDebug($"合并用时{sw.ElapsedMilliseconds}毫秒");
 
 
             //throw new NotImplementedException();
@@ -108,7 +115,7 @@ namespace uMatrixCleaner
         /// <param name="rules"></param>
         /// <param name="thresholdToRemove">如果为<see cref="int.MaxValue"/>则只去除重复，不进行合并。</param>
         /// <returns></returns>
-        public static void Merge(List<UMatrixRule> rules, int thresholdToRemove, ILogger logger)
+        public static void Merge(List<UMatrixRule> rules, int thresholdToRemove)
         {
             HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
             savedSearch = 0;
@@ -191,6 +198,7 @@ namespace uMatrixCleaner
                 }
             }
 
+            logger.LogDebug($"{nameof(notWorkingRules)}变量节省了{savedSearch}次查询。");
 
             foreach (var newRule in newRules)
             {

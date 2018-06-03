@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace uMatrixCleaner
 {
     class RuleRelationshipManager
     {
+        private static readonly ILogger logger =ApplicationLogging.CreateLogger<RuleRelationshipManager>();
+
         private readonly ConcurrentDictionary<UMatrixRule, HashSet<UMatrixRule>> superOrJointRulesDictionary;
         private readonly Task initTask;
 
@@ -20,7 +19,7 @@ namespace uMatrixCleaner
             superOrJointRulesDictionary = new ConcurrentDictionary<UMatrixRule, HashSet<UMatrixRule>>();
             initTask = new Task(rs =>
             {
-                Console.WriteLine($"初始化{nameof(RuleRelationshipManager)}……");
+                logger.LogTrace($"初始化{nameof(RuleRelationshipManager)}……");
                 System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
                 sw.Start();
                 Parallel.ForEach(rules, rule =>
@@ -33,7 +32,7 @@ namespace uMatrixCleaner
                 });
 
                 sw.Stop();
-                Console.WriteLine($"初始化{nameof(RuleRelationshipManager)}用时{sw.ElapsedMilliseconds}毫秒");
+                logger.LogDebug($"初始化{nameof(RuleRelationshipManager)}用时{sw.ElapsedMilliseconds}毫秒");
             }, rules);
             initTask.Start();
         }
@@ -42,7 +41,7 @@ namespace uMatrixCleaner
         {
             if (initTask.IsCompletedSuccessfully == false)
             {
-                Console.WriteLine($"无法调用{nameof(GetSuperOrJointRules)}，等待{nameof(RuleRelationshipManager)}初始化");
+                logger.LogTrace($"无法调用{nameof(GetSuperOrJointRules)}，等待{nameof(RuleRelationshipManager)}初始化");
                 Task.WaitAll(initTask);
             }
 
@@ -53,7 +52,7 @@ namespace uMatrixCleaner
         {
             if (initTask.IsCompletedSuccessfully == false)
             {
-                Console.WriteLine($"无法调用{nameof(NotifyItemDeleted)}，等待{nameof(RuleRelationshipManager)}初始化");
+                logger.LogTrace($"无法调用{nameof(NotifyItemDeleted)}，等待{nameof(RuleRelationshipManager)}初始化");
                 Task.WaitAll(initTask);
             }
 
@@ -64,31 +63,5 @@ namespace uMatrixCleaner
                 value.Remove(deletedRule);
             }
         }
-
-        public void NotifyItemDeleted(IEnumerable<UMatrixRule> deletedRules)
-        {
-            if (initTask.IsCompletedSuccessfully == false)
-            {
-                Console.WriteLine($"无法调用{nameof(NotifyItemDeleted)}，等待{nameof(RuleRelationshipManager)}初始化");
-                Task.WaitAll(initTask);
-            }
-
-            foreach (var deletedRule in deletedRules)
-            {
-                superOrJointRulesDictionary.TryRemove(deletedRule, out _);
-
-                foreach (var value in superOrJointRulesDictionary.Values)
-                {
-                    value.Remove(deletedRule);
-                }
-            }
-        }
-
-        //private void Rules_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        //{
-        //    if (e.Action != NotifyCollectionChangedAction.Remove)
-        //        throw new NotSupportedException($"{nameof(RuleRelationshipManager)}不支持监听{e.Action}操作。");
-        //    throw new NotImplementedException();
-        //}
     }
 }
