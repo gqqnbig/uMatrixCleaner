@@ -169,7 +169,7 @@ namespace uMatrixCleaner
 
                             newRules.Add(generalizedRule); //新规则不再参与合并，否则会有叠加效应
 
-                            var info = "合并" + string.Join("、\r\n    ", toRemove);
+                            var info = "合并" + string.Join("、\r\n    ", toRemove.Select(r => r.ToString("\t")));
                             info += "\r\n  为" + generalizedRule;
 
                             for (int j = rules.Count - 1; j >= i && toRemove.Count > 0; j--)

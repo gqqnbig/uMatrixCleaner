@@ -55,5 +55,11 @@ namespace uMatrixCleaner
         {
             return $"{Selector} {(IsAllow ? "allow" : "block")}";
         }
+
+
+        public string ToString(string separator)
+        {
+            return Selector.ToString(separator) + separator + (IsAllow ? "allow" : "block");
+        }
     }
 }

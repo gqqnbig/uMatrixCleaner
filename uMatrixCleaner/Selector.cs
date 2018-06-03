@@ -189,6 +189,13 @@ namespace uMatrixCleaner
             return $"{Source} {Destination} {typeString}";
         }
 
+
+        public string ToString(string separator)
+        {
+            var typeString = Type == TypePredicate.All ? "*" : Type.ToString().ToLower();
+            return Source + separator + Destination + separator + typeString;
+        }
+
         public override bool Equals(object obj)
         {
             var other = obj as Selector;
