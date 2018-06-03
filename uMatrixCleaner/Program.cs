@@ -101,7 +101,7 @@ namespace uMatrixCleaner
         /// 返回新增的规则
         /// </summary>
         /// <param name="rules"></param>
-        /// <param name="thresholdToRemove"></param>
+        /// <param name="thresholdToRemove">如果为<see cref="int.MaxValue"/>则只去除重复，不进行合并。</param>
         /// <returns></returns>
         public static void Merge(List<UMatrixRule> rules, int thresholdToRemove)
         {
@@ -117,7 +117,8 @@ namespace uMatrixCleaner
                 var currentRule = rules[i];
 
 
-                var g = currentRule.Selector.Generalize();
+                var g = currentRule.Selector;
+                bool isGeneralized = false;
                 while (g != null)
                 {
                     var generalizedRule = new UMatrixRule(g.Source, g.Destination, g.Type, currentRule.IsAllow);
@@ -132,7 +133,7 @@ namespace uMatrixCleaner
                                     select r).ToArray();
 
 
-                    if (subRules.Length >= thresholdToRemove)
+                    if (subRules.Length >= (isGeneralized ? thresholdToRemove : 1))
                     {
                         var toRemove = new HashSet<UMatrixRule>();
                         foreach (var subRule in subRules)
@@ -149,7 +150,7 @@ namespace uMatrixCleaner
                         }
 
 
-                        if (toRemove.Count >= thresholdToRemove)
+                        if (toRemove.Count >= (isGeneralized ? thresholdToRemove : 1))
                         {
                             Debug.Assert(toRemove.Contains(currentRule) || toRemove.Contains(currentRule) == false,
                                 "当前规则可能被更高优先级规则锁定，但当前规则的推广规则可能可用于合并其他规则。");
@@ -178,9 +179,18 @@ namespace uMatrixCleaner
                     }
 
                     g = g.Generalize();
+                    isGeneralized = true;
+                    if (thresholdToRemove == int.MaxValue)
+                        break;
                 }
             }
-            rules.AddRange(newRules);
+
+
+            foreach (var newRule in newRules)
+            {
+                if (rules.Contains(newRule) == false)
+                    rules.Add(newRule);
+            }
         }
     }
 }
