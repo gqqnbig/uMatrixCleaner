@@ -157,10 +157,12 @@ namespace uMatrixCleaner
                             newRules.Add(generalizedRule); //新规则不再参与合并，否则会有叠加效应
 
                             Console.Write("合并");
-                            for (int j = rules.Count - 1; j >= i; j--)
+                            for (int j = rules.Count - 1; j >= i && toRemove.Count > 0; j--)
                             {
                                 if (toRemove.Contains(rules[j]))
                                 {
+                                    toRemove.Remove(rules[j]);
+
                                     Console.WriteLine("\t\t" + rules[j]);
                                     rrManager.NotifyItemDeleted(rules[j]);
                                     rules[j] = rules[rules.Count - 1];
