@@ -159,10 +159,8 @@ namespace uMatrixCleaner
                             Console.Write("合并");
                             for (int j = rules.Count - 1; j >= i && toRemove.Count > 0; j--)
                             {
-                                if (toRemove.Contains(rules[j]))
+                                if (toRemove.Remove(rules[j]))
                                 {
-                                    toRemove.Remove(rules[j]);
-
                                     Console.WriteLine("\t\t" + rules[j]);
                                     rrManager.NotifyItemDeleted(rules[j]);
                                     rules[j] = rules[rules.Count - 1];
