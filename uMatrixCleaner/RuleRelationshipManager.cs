@@ -15,7 +15,7 @@ namespace uMatrixCleaner
         private readonly Task initTask;
 
 
-        public RuleRelationshipManager(UMatrixRule[] rules)
+        public RuleRelationshipManager(IList<UMatrixRule> rules)
         {
             superOrJointRulesDictionary = new ConcurrentDictionary<UMatrixRule, HashSet<UMatrixRule>>();
             initTask = new Task(rs =>

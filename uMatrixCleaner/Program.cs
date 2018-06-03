@@ -108,7 +108,7 @@ namespace uMatrixCleaner
             HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
             savedSearch = 0;
 
-            var rrManager = new RuleRelationshipManager(rules.ToArray());
+            var rrManager = new RuleRelationshipManager(rules);
 
             List<UMatrixRule> newRules = new List<UMatrixRule>();
 
