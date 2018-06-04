@@ -117,7 +117,7 @@ namespace uMatrixCleaner
 		/// <returns></returns>
 		public static void Merge(List<UMatrixRule> rules, int thresholdToRemove)
 		{
-            HashSet<UMatrixRule> notWorkingRules = new HashSet<UMatrixRule>();
+			HashSet<UMatrixRule> processedRules = new HashSet<UMatrixRule>();
 			savedSearch = 0;
 
 			var rrManager = new RuleRelationshipManager(rules);
@@ -134,7 +134,7 @@ namespace uMatrixCleaner
 				while (g != null)
 				{
 					var generalizedRule = new UMatrixRule(g.Source, g.Destination, g.Type, currentRule.IsAllow);
-                    if (notWorkingRules.Contains(generalizedRule))
+					if (processedRules.Contains(generalizedRule))
 					{
 						savedSearch++;
 						break;
@@ -147,7 +147,7 @@ namespace uMatrixCleaner
 
 					if (subRules.Length >= (isGeneralized ? thresholdToRemove : 1))
 					{
-                        var toRemove = new HashSet<UMatrixRule>();
+						var toRemove = new List<UMatrixRule>();
 						foreach (var subRule in subRules)
 						{
 							var superOrJointRules = rrManager.GetSuperOrJointRules(subRule).Where(r => r.IsAllow != subRule.IsAllow);
@@ -162,31 +162,34 @@ namespace uMatrixCleaner
 							}
 						}
 
-                        if (toRemove.Count >= (isGeneralized ? thresholdToRemove : 1))
-                        {
 						Debug.Assert(toRemove.Contains(currentRule) || toRemove.Contains(currentRule) == false,
 							"当前规则可能被更高优先级规则锁定，但当前规则的推广规则可能可用于合并其他规则。");
 
+						var groupings = toRemove.GroupBy(r => r.Selector.GetDistanceTo(generalizedRule.Selector)).ToArray();
 
+						foreach (var grouping in groupings)
+						{
+							if (grouping.Count() >= (isGeneralized ? GetDistance(grouping.Key) * thresholdToRemove : 1))
+							{
 
 								newRules.Add(generalizedRule); //新规则不再参与合并，否则会有叠加效应
 
 								string info;
 								if (isGeneralized)
 								{
-                                info = "合并" + string.Join("、\r\n    ", toRemove.Select(r => r.ToString("\t")));
+									info = "合并" + string.Join("、\r\n    ", grouping.Select(r => r.ToString("\t")));
 									info += "\r\n  为" + generalizedRule.ToString("\t") + "。";
 								}
 								else
 								{
-                                info = "删除    " + string.Join("、\r\n        ", toRemove.Select(r => r.ToString("\t")));
+									info = "删除    " + string.Join("、\r\n        ", grouping.Select(r => r.ToString("\t")));
 									info += $"\r\n因为它被{generalizedRule.ToString("\t")}包含。";
 								}
 
 
-                            for (int j = rules.Count - 1; j >= i && toRemove.Count > 0; j--)
+								for (int j = rules.Count - 1; j >= i; j--)
 								{
-                                if (toRemove.Remove(rules[j]))
+									if (grouping.Contains(rules[j]))
 									{
 										rrManager.NotifyItemDeleted(rules[j]);
 										rules[j] = rules[rules.Count - 1];
@@ -195,10 +198,10 @@ namespace uMatrixCleaner
 								}
 
 								logger.LogInformation(info);
-
+							}
 						}
-                        else
-                            notWorkingRules.Add(generalizedRule);
+
+						processedRules.Add(generalizedRule);
 
 						break;
 					}
@@ -210,7 +213,7 @@ namespace uMatrixCleaner
 				}
 			}
 
-            logger.LogDebug($"{nameof(notWorkingRules)}变量节省了{savedSearch}次查询。");
+			logger.LogDebug($"{nameof(processedRules)}变量节省了{savedSearch}次查询。");
 
 			foreach (var newRule in newRules)
 			{
@@ -220,7 +223,15 @@ namespace uMatrixCleaner
 		}
 
 
+		public static byte GetDistance(Tuple<byte, byte, byte> distance)
+		{
+			if (distance.Item1 > 0)
+				return distance.Item1;
+			if (distance.Item2 > 0)
+				return distance.Item2;
+			return distance.Item3;
 		}
+	}
 
 
 }

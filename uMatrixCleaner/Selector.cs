@@ -183,6 +183,95 @@ namespace uMatrixCleaner
             return null;
         }
 
+
+        public Tuple<byte, byte, byte> GetDistanceTo(Selector generalizedSelector)
+        {
+            if (Source.Value == generalizedSelector.Source.Value && Destination.Value == generalizedSelector.Destination.Value)
+                return Tuple.Create<byte, byte, byte>(0, 0, (byte)(Type == generalizedSelector.Type ? 0 : 1));
+
+            if (Source.Value == generalizedSelector.Source.Value && Type == generalizedSelector.Type)
+            {
+                if (Destination.IsIP)
+                {
+                    Debug.Assert(generalizedSelector.Destination.Value == "*", $"{nameof(GetDistanceTo)}方法只接受当前选择器的推广选择器。{generalizedSelector}不是当前选择器{this}的推广。");
+
+                    return Tuple.Create<byte, byte, byte>(0, 9, 0);
+                }
+
+                if (Destination.Value == generalizedSelector.Destination.Value)
+                    return Tuple.Create<byte, byte, byte>(0, 0, 0);
+                if (Destination.Value == HostPredicate.N1stParty.Value)
+                {
+                    Debug.Assert(generalizedSelector.Destination.Value == "*", $"{nameof(GetDistanceTo)}方法只接受当前选择器的推广选择器。{generalizedSelector}不是当前选择器{this}的推广。");
+                    return Tuple.Create<byte, byte, byte>(0, 1, 0);
+                }
+
+                Debug.Assert(Destination.IsDomain);
+
+                if (generalizedSelector.Destination.Value == "*")
+                {
+                    var domainName = HostPredicate.domainParser.Get(Destination.Value);
+                    if (string.IsNullOrEmpty(domainName.SubDomain))
+                    {
+                        return Tuple.Create<byte, byte, byte>(0, 1, 0);
+                    }
+                    else
+                    {
+                        return Tuple.Create<byte, byte, byte>(0, (byte)(domainName.SubDomain.Count(c => c == '.') + 2), 0);
+                    }
+                }
+                else
+                {
+                    var mySubDomain = Destination.Value.Substring(0, Destination.Value.Length - generalizedSelector.Destination.Value.Length);
+                    Debug.Assert(mySubDomain.Length > 0);
+                    return Tuple.Create<byte, byte, byte>(0, (byte)mySubDomain.Count(c => c == '.'), 0);
+                }
+            }
+
+
+            if (Destination.Value == generalizedSelector.Destination.Value && Type == generalizedSelector.Type)
+            {
+                if (Source.IsIP)
+                {
+                    Debug.Assert(generalizedSelector.Source.Value == "*", $"{nameof(GetDistanceTo)}方法只接受当前选择器的推广选择器。{generalizedSelector}不是当前选择器{this}的推广。");
+
+                    return Tuple.Create<byte, byte, byte>(0, 0, 9);
+                }
+
+                if (Source.Value == generalizedSelector.Source.Value)
+                    return Tuple.Create<byte, byte, byte>(0, 0, 0);
+                if (Source.Value == HostPredicate.N1stParty.Value)
+                {
+                    Debug.Assert(generalizedSelector.Source.Value == "*", $"{nameof(GetDistanceTo)}方法只接受当前选择器的推广选择器。{generalizedSelector}不是当前选择器{this}的推广。");
+                    return Tuple.Create<byte, byte, byte>(0, 0, 1);
+                }
+
+                Debug.Assert(Source.IsDomain);
+
+                if (generalizedSelector.Source.Value == "*")
+                {
+                    var domainName = HostPredicate.domainParser.Get(Source.Value);
+                    if (string.IsNullOrEmpty(domainName.SubDomain))
+                    {
+                        return Tuple.Create<byte, byte, byte>(0, 0, 1);
+                    }
+                    else
+                    {
+                        return Tuple.Create<byte, byte, byte>(0, 0, (byte)(domainName.SubDomain.Count(c => c == '.') + 2));
+                    }
+                }
+                else
+                {
+                    var mySubDomain = Source.Value.Substring(0, Source.Value.Length - generalizedSelector.Source.Value.Length);
+                    Debug.Assert(mySubDomain.Length > 0);
+                    return Tuple.Create<byte, byte, byte>(0, 0, (byte)(mySubDomain.Count(c => c == '.') + 1));
+                }
+            }
+
+            return Tuple.Create(byte.MaxValue, byte.MaxValue, byte.MaxValue);
+        }
+
+
         public override string ToString()
         {
             var typeString = Type == TypePredicate.All ? "*" : Type.ToString().ToLower();

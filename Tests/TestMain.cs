@@ -94,10 +94,9 @@ namespace Tests
             rules.Add(r2);
             rules.Add(r3);
             Program.Merge(rules, 3);
-            Assert.Contains(new UMatrixRule("* facebook.com frame allow"), rules);
-            Assert.DoesNotContain(r1, rules);
-            Assert.DoesNotContain(r2, rules);
-            Assert.DoesNotContain(r3, rules);
+            Assert.Contains(r1, rules);
+            Assert.Contains(r2, rules);
+            Assert.Contains(r3, rules);
         }
 
 		[Fact]
@@ -105,8 +104,8 @@ namespace Tests
 		{
 			var input = @"
 * * * block
-* www.google.com css allow
-* www.facebook.com css allow";
+* google.com css allow
+* facebook.com css allow";
 
             var rules = new List<UMatrixRule>(from line in input.Split("\r\n")
                                               where line.Length > 0
