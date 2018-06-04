@@ -54,61 +54,61 @@ namespace Tests
         public static void TestGeneralize()
         {
             var g = new UMatrixRule("gqqnbig.blogspot.com charliegogogogo.blogspot.com script block").Selector;
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("gqqnbig.blogspot.com charliegogogogo.blogspot.com *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("gqqnbig.blogspot.com blogspot.com script", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("gqqnbig.blogspot.com blogspot.com *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("gqqnbig.blogspot.com * script", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("gqqnbig.blogspot.com * *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("blogspot.com charliegogogogo.blogspot.com script", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("blogspot.com charliegogogogo.blogspot.com *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("blogspot.com blogspot.com script", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("blogspot.com blogspot.com *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("blogspot.com 1st-party script", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("blogspot.com 1st-party *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("blogspot.com * script", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("blogspot.com * *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("* charliegogogogo.blogspot.com script", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("* charliegogogogo.blogspot.com *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("* blogspot.com script", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("* blogspot.com *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("* * script", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("* * *", g.ToString());
 
             g = g.Generalize();
@@ -121,28 +121,28 @@ namespace Tests
         public static void TestGeneralizeWithTld()
         {
             var g = new UMatrixRule("blog.sina.com.cn sjs.sinajs.cn * allow").Selector;
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
 			Assert.Equal("blog.sina.com.cn sinajs.cn *", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("blog.sina.com.cn * *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("sina.com.cn sjs.sinajs.cn *", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("sina.com.cn sinajs.cn *", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("sina.com.cn * *", g.ToString());
 
             g = g.Generalize();
             Assert.Equal("* sjs.sinajs.cn *", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("* sinajs.cn *", g.ToString());
 
-            Assert.Equal(1, Program.GetDistance(g.GetDistanceTo(g = g.Generalize())));
+            Assert.Equal(1, RuleRelationshipManager.GetDistance(g.GetDistanceTo(g = g.Generalize())));
             Assert.Equal("* * *", g.ToString());
 
             g = g.Generalize();
