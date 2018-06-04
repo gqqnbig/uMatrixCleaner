@@ -75,7 +75,7 @@ namespace uMatrixCleaner
 
 				var mostDetailedSuperOrJointRules = GetMostDetailedSuperOrJointRules(currentRule, rules);
 
-                if (mostDetailedSuperOrJointRules.Any(r => currentRule.Selector.HasJoint(r.Selector) && r.IsAllow != currentRule.IsAllow))
+				if (mostDetailedSuperOrJointRules.Any(r => currentRule.Selector.HasJoint(r.Selector, out _, out _, out _) && r.IsAllow != currentRule.IsAllow))
 				{
 					//如果有一个部分匹配的相反规则，则本规则不能删除
 				}
