@@ -126,7 +126,7 @@ namespace Tests
 				Assert.Equal(2, e.RulesToDelete.Count);
 			};
 			rules = relationshipManager.Clean(2);
-			Assert.Equal(2, rules.Count);
+			Assert.True(2 == rules.Count, "多于2条规则：" + string.Join(", ", rules));
 		}
 
 		[Fact]
