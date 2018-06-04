@@ -338,22 +338,22 @@ namespace uMatrixCleaner
 
         public string Value { get; }
 
-        private int specificity = -1;
-        public int Specificity
-        {
-            get
-            {
-                if (specificity == -1)
-                {
-                    if (Value == "*")
-                        specificity = 0;
-                    else if (Value == "1st-party")
-                        specificity = 1;
-                    else if (IsIP)
-                        specificity = 1;
-                    else
-                        specificity = 1 + ((domainParser.Get(Value).SubDomain?.Count(c => c == '.') + 1) ?? 0); //Null合并运算符的优先级比加号低，所以加号会先算，所以要用括号包起来。
-                }
+		private int specificity = -1;
+		public int Specificity
+		{
+			get
+			{
+				if (specificity == -1)
+				{
+					if (HostType == UriHostNameType.Basic)
+						specificity = 0;
+					else if (Value == "1st-party")
+						specificity = 1;
+					else if (IsIP)
+						specificity = 1;
+					else
+						specificity = 1 + ((domainParser.Get(Value).SubDomain?.Count(c => c == '.') + 1) ?? 0); //Null合并运算符的优先级比加号低，所以加号会先算，所以要用括号包起来。
+				}
 
                 return specificity;
             }
