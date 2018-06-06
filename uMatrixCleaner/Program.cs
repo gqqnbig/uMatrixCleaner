@@ -67,7 +67,7 @@ namespace uMatrixCleaner
 
 			ruleManager.Clean(3);
 			sw.Stop();
-			logger.LogDebug($"合并用时{sw.ElapsedMilliseconds}毫秒");
+			logger.LogDebug("合并用时{0}毫秒", sw.ElapsedMilliseconds);
 
 
 			//throw new NotImplementedException();
