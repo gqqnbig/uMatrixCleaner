@@ -21,13 +21,16 @@ namespace Tests
 											  where line.Length > 0
 											  select new UMatrixRule(line));
 			var relationshipManager = new RuleRelationshipManager(rules);
+			var eventRaised = false;
 			relationshipManager.MergeEvent += (_, e) =>
 			{
+				eventRaised = true;
 				Assert.AreEqual(new UMatrixRule("* * css allow"), e.MasterRule);
 				Assert.AreEqual(2, e.RulesToDelete.Count);
 			};
 			rules = relationshipManager.Clean(2);
-			Assert.AreEqual(4, rules.Count, "Rules: \r\n" + string.Join(", ", rules));
+			Assert.IsTrue(eventRaised, "MergeEvent is not raised.");
+			Assert.AreEqual(2, rules.Count, "Rules: \r\n" + string.Join(", ", rules));
 		}
 
 	}
