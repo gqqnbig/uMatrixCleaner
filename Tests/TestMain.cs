@@ -109,27 +109,6 @@ namespace Tests
 		}
 
 		[Fact]
-		public static void TestMergeWildcard()
-		{
-			var input = @"
-* * * block
-* google.com css allow
-* facebook.com css allow";
-
-			var rules = new List<UMatrixRule>(from line in input.Split("\r\n")
-											  where line.Length > 0
-											  select new UMatrixRule(line));
-			var relationshipManager = new RuleRelationshipManager(rules);
-			relationshipManager.MergeEvent += (_, e) =>
-			{
-				Assert.Equal(new UMatrixRule("* * css allow"), e.MasterRule);
-				Assert.Equal(2, e.RulesToDelete.Count);
-			};
-			rules = relationshipManager.Clean(2);
-			Assert.True(2 == rules.Count, "多于2条规则：" + string.Join(", ", rules));
-		}
-
-		[Fact]
 		public static void TestMergeBlock()
 		{
 
