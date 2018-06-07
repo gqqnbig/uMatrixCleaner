@@ -107,9 +107,11 @@ namespace uMatrixCleaner
 								generalizedRule.IsAllow && generalizedRule.Selector.Type == TypePredicate.All && subRule.Selector.Type != TypePredicate.All)
 							{
 								//不能删除
+								logger.LogTrace("{0}不能被删除。", subRule);
 							}
 							else
 							{
+								logger.LogTrace("{0}可能可以被删除。", subRule);
 								toRemove.Add(subRule);
 							}
 						}
