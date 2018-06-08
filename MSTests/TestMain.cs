@@ -17,7 +17,7 @@ namespace Tests
 * google.com css allow
 * facebook.com css allow";
 
-			var rules = new List<UMatrixRule>(from line in input.Split("\r\n")
+			var rules = new List<UMatrixRule>(from line in input.Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries)
 											  where line.Length > 0
 											  select new UMatrixRule(line));
 			var relationshipManager = new RuleRelationshipManager(rules);

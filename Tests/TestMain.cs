@@ -58,7 +58,7 @@ namespace Tests
 * 1st-party * allow
 * 1st-party frame allow
 * 1st-party script allow";
-            var baseRules = (from line in input.Split("\r\n")
+            var baseRules = (from line in input.Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries)
                              where line.Length > 0
                              select new UMatrixRule(line)).ToList().AsReadOnly();
 
@@ -123,7 +123,7 @@ namespace Tests
 * 1st-party script allow
 * www.baidu.com cookie block
 * tieba.baidu.com cookie block";
-			var rules = new List<UMatrixRule>(from line in input.Split("\r\n")
+			var rules = new List<UMatrixRule>(from line in input.Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries)
 											  where line.Length > 0
 											  select new UMatrixRule(line));
 			var relationshipManager = new RuleRelationshipManager(rules);
@@ -149,7 +149,7 @@ namespace Tests
 * 1st-party script allow
 * baidu.com css block
 * baidu.com image block";
-			var rules = new List<UMatrixRule>(from line in input.Split("\r\n")
+			var rules = new List<UMatrixRule>(from line in input.Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries)
 											  where line.Length > 0
 											  select new UMatrixRule(line));
 			var relationshipManager = new RuleRelationshipManager(rules);
