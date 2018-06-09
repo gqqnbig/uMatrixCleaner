@@ -2,8 +2,8 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using CommandLine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +15,12 @@ namespace uMatrixCleaner
 
 		static void Main(string[] args)
 		{
+			var result = new Parser(with =>
+			{
+				with.EnableDashDash = true;
+				with.HelpWriter = Console.Error;
+			}).ParseArguments<Options>(args);
+			
 			var builder = new ConfigurationBuilder()
 				.SetBasePath(Directory.GetCurrentDirectory())
 				.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
