@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Xml;
+using System.Xml.Schema;
+using System.Xml.Serialization;
+using uMatrixCleaner.Xml;
 
 namespace uMatrixCleaner
 {
-    public class UMatrixRule
-    {
+	public class UMatrixRule : IXmlSerializable
+	{
         public bool IsAllow { get; }
 
         public Selector Selector { get; }
@@ -54,5 +58,36 @@ namespace uMatrixCleaner
         {
             return Selector.ToString(separator) + separator + (IsAllow ? "allow" : "block");
         }
-    }
+
+		#region XML序列化
+
+		// ReSharper disable once UnusedMember.Local
+		private UMatrixRule() { }
+
+		public XmlSchema GetSchema() { return null; }
+
+		public void ReadXml(XmlReader reader)
+		{
+			reader.ReadToDescendant("Source");
+			var source = reader.ReadElementContentAsString();
+			var destination = reader.ReadElementContentAsString();
+			var type = reader.ReadElementContentAsString();
+
+			var selector = new Selector(new HostPredicate(source), new HostPredicate(destination), (TypePredicate)Enum.Parse(typeof(TypePredicate), type));
+			this.SetGetterOnlyAutoProperty(nameof(Selector), selector);
+
+			this.SetGetterOnlyAutoProperty(nameof(IsAllow), reader.ReadElementContentAsBoolean());
+			reader.Read();
+		}
+
+		public void WriteXml(XmlWriter writer)
+		{
+			writer.WriteElementString("Source", Selector.Source.Value);
+			writer.WriteElementString("Destination", Selector.Destination.Value);
+			writer.WriteElementString("Type", Selector.Type.ToString());
+			writer.WriteElementString("IsAllow", IsAllow.ToString().ToLowerInvariant());
+		}
+
+		#endregion
+	}
 }

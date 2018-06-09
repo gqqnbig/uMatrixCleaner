@@ -1,10 +1,13 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Xml;
+using System.Xml.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using NLog.Extensions.Logging;
+using uMatrixCleaner.Xml;
+
 
 namespace uMatrixCleaner
 {
@@ -29,34 +32,58 @@ namespace uMatrixCleaner
 		{
 			try
 			{
+				//var mergeEventArgs = new MergeEventArgs();
+				//mergeEventArgs.MasterRule = new UMatrixRule("* * css allow");
+				//mergeEventArgs.RulesToDelete = new List<UMatrixRule>(new[]
+				//{
+				//	new UMatrixRule("google.com facebook.com cookie block"),
+				//	new UMatrixRule("* 1st-party script allow"),
+				//});
+
+				//var dedupEventArgs = new DedupRuleEventArgs();
+				//dedupEventArgs.MasterRule = new UMatrixRule("www.amazon.com * cookie allow");
+				//dedupEventArgs.DuplicateRules = new List<UMatrixRule>(new[]{
+				//	new UMatrixRule("www.amazon.com macao.com cookie allow")
+				//});
+
+				//var list = new List<EventArgs>();
+				//list.Add(mergeEventArgs);
+				//list.Add(dedupEventArgs);
+
+
+				//var overrides = new XmlAttributeOverrides();
+				//var xmlAttributes = new XmlAttributes();
+				//xmlAttributes.XmlRoot = new XmlRootAttribute("Events");
+				////xmlAttributes.XmlElements.Add(new XmlElementAttribute("MergeEvent", typeof(MergeEventArgs)));
+				////xmlAttributes.XmlElements.Add(new XmlElementAttribute("DedupRuleEvent", typeof(DedupRuleEventArgs)));
+
+				//overrides.Add(list.GetType(), xmlAttributes);
+				//xmlAttributes = new XmlAttributes();
+				//xmlAttributes.XmlRoot = new XmlRootAttribute("MergeEvent");
+				//overrides.Add(typeof(MergeEventArgs), xmlAttributes);
+
+				//xmlAttributes = new XmlAttributes();
+				//xmlAttributes.XmlRoot = new XmlRootAttribute("DedupRuleEvent");
+				//overrides.Add(typeof(DedupRuleEventArgs), xmlAttributes);
+
+
+				//using (var xmlWriter = XmlWriter.Create("a.xml", new XmlWriterSettings { Indent = true }))
+				//{
+
+				//	new XmlSerializer(list.GetType(), overrides, new[] { typeof(MergeEventArgs), typeof(DedupRuleEventArgs) }, null, null).Serialize(xmlWriter, list);
+				//}
+
+				//using (var xmlReader = XmlReader.Create("a.xml", new XmlReaderSettings { IgnoreWhitespace = true }))
+				//{
+				//	var obj = (Xml.EventClass)new XmlSerializer(list.GetType(), new[] { typeof(MergeEventArgs), typeof(DedupRuleEventArgs) }).Deserialize(xmlReader);
+
+				//}
+
+				//return;
+
 
 				options = new Options();
 				if (ParseOptions(args)) return;
-
-
-
-
-
-
-				if (options.Log != null)
-				{
-					var config = new NLog.Config.LoggingConfiguration();
-
-
-					var logFile = new NLog.Targets.FileTarget("logfile");
-					if (options.Log == "d")
-					{
-						logFile.FileName = "uMatrixCleaner.log";
-						logFile.ArchiveEvery = NLog.Targets.FileArchivePeriod.Day;
-					}
-					else
-						logFile.FileName = options.OutputFilePath;
-					config.AddRule(options.IsVerbose ? NLog.LogLevel.Debug : NLog.LogLevel.Info, NLog.LogLevel.Fatal, logFile);
-
-					NLog.LogManager.Configuration = config;
-
-					ApplicationLogging.LoggerFactory.AddNLog(new NLogProviderOptions { IgnoreEmptyEventId = true });
-				}
 
 
 				var outputString = Clean(File.ReadAllText(options.InputFilePath));
@@ -101,6 +128,10 @@ namespace uMatrixCleaner
 			var workingRules = new HashSet<UMatrixRule>(rules.Except(exemptedRules));
 
 
+			EventsHelper events = null;
+
+			if (options.Log != null)
+				events = new EventsHelper();
 			var sw = new System.Diagnostics.Stopwatch();
 			sw.Start();
 			var ruleManager = new RuleRelationshipManager(workingRules.ToList());
@@ -112,6 +143,8 @@ namespace uMatrixCleaner
 					info += "\r\n  为" + e.MasterRule.ToString("\t") + "。";
 					logger.LogInformation(info);
 				}
+
+				events?.Events.Add(e);
 			};
 
 			ruleManager.DedupEvent += (sender, e) =>
@@ -122,6 +155,7 @@ namespace uMatrixCleaner
 					 info += $"\r\n因为它被{e.MasterRule.ToString("\t")}包含。";
 					 logger.LogInformation(info);
 				 }
+				 events?.Events.Add(e);
 			 };
 
 
@@ -129,6 +163,20 @@ namespace uMatrixCleaner
 			sw.Stop();
 			logger.LogDebug("合并用时{0}毫秒", sw.ElapsedMilliseconds);
 
+			if (events != null)
+			{
+				using (XmlWriter xmlWriter = XmlWriter.Create(options.Log == "d" ? "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml" : options.Log, new XmlWriterSettings { Indent = true }))
+				{
+					new XmlSerializer(events.GetType(),  new[] { typeof(MergeEventArgs), typeof(DedupRuleEventArgs) }).Serialize(xmlWriter, events);
+				}
+
+				//反序列化的代码如下
+				//using (var xmlReader = XmlReader.Create("a.xml", new XmlReaderSettings { IgnoreWhitespace = true }))
+				//{
+				//	var obj = (Xml.EventClass)new XmlSerializer(list.GetType(), new[] { typeof(MergeEventArgs), typeof(DedupRuleEventArgs) }).Deserialize(xmlReader);
+
+				//}
+			}
 
 			return string.Join(Environment.NewLine, ignoredLines) + string.Join(Environment.NewLine, exemptedRules.Union(newRules));
 
