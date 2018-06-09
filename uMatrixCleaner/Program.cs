@@ -27,14 +27,21 @@ namespace uMatrixCleaner
 
 		static void Main(string[] args)
 		{
-			var result = new Parser(with =>
+			try
 			{
-				with.EnableDashDash = true;
-				with.HelpWriter = Console.Error;
-			}).ParseArguments<Options>(args);
+				var result = new Parser(with =>
+				{
+					with.EnableDashDash = true;
+					with.HelpWriter = Console.Error;
+				}).ParseArguments<Options>(args);
 
-			Clean(System.IO.File.ReadAllText(@"D:\Documents\Visual Studio 2017\Projects\uMatrixCleaner\test.txt"));
+				Clean(System.IO.File.ReadAllText(@"D:\Documents\Visual Studio 2017\Projects\uMatrixCleaner\test.txt"));
 
+			}
+			finally
+			{
+				ApplicationLogging.LoggerFactory.Dispose();
+			}
 		}
 
 
