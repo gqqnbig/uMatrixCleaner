@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.Logging;
 using uMatrixCleaner;
 using Xunit;
 
@@ -11,9 +10,6 @@ namespace Tests
         [Fact]
         public static void TestDeduplicate()
         {
-            var loggerFactory = new LoggerFactory();
-            var logger = loggerFactory.CreateLogger<Program>();
-
             var r1 = new UMatrixRule("* 1st-party css block");
             var r2 = new UMatrixRule("google.com * css allow");
             var r3 = new UMatrixRule("mail.google.com * css allow");

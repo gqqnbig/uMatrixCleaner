@@ -452,15 +452,6 @@ namespace uMatrixCleaner
             return Value;
         }
 
-        internal static string GetLastUrlSegments(string url, int segmentCount)
-        {
-            int p = url.Length - 1;
-            while (p > -1 && segmentCount-- > 0)
-                p = url.LastIndexOf('.', p) - 1;
-
-            return p >= 0 ? url.Substring(p + 2) : url;
-        }
-
 
         public static implicit operator string(HostPredicate url)
         {
