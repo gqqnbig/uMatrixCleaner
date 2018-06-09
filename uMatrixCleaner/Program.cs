@@ -11,7 +11,19 @@ namespace uMatrixCleaner
 {
 	public class Program
 	{
-		private static ILogger logger = ApplicationLogging.CreateLogger<Program>();
+		private static readonly ILogger logger;
+
+		static Program()
+		{
+			var builder = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+			var configuration = builder.Build();
+
+			ApplicationLogging.LoggerFactory.AddConsole(configuration.GetSection("Logging"));
+
+			logger = ApplicationLogging.CreateLogger<Program>();
+		}
 
 		static void Main(string[] args)
 		{
@@ -20,13 +32,6 @@ namespace uMatrixCleaner
 				with.EnableDashDash = true;
 				with.HelpWriter = Console.Error;
 			}).ParseArguments<Options>(args);
-			
-			var builder = new ConfigurationBuilder()
-				.SetBasePath(Directory.GetCurrentDirectory())
-				.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-			var configuration = builder.Build();
-
-			ApplicationLogging.LoggerFactory.AddConsole(configuration.GetSection("Logging"));
 
 			Clean(System.IO.File.ReadAllText(@"D:\Documents\Visual Studio 2017\Projects\uMatrixCleaner\test.txt"));
 
