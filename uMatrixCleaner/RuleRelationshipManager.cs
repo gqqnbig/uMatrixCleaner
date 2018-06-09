@@ -31,9 +31,14 @@ namespace uMatrixCleaner
 			this.rules = rules;
 			superOrJointRulesDictionary = new ConcurrentDictionary<UMatrixRule, HashSet<UMatrixRule>>();
 
-			logger.LogTrace("初始化{0}……", nameof(RuleRelationshipManager));
-			Stopwatch sw = new Stopwatch();
-			sw.Start();
+			Stopwatch sw = null;
+			if (logger.IsEnabled(LogLevel.Debug))
+			{
+				logger.LogTrace("初始化{0}……", nameof(RuleRelationshipManager));
+				sw = new Stopwatch();
+				sw.Start();
+			}
+
 			Parallel.ForEach(rules, rule =>
 			{
 				var superRules = (from r in rules
@@ -43,8 +48,11 @@ namespace uMatrixCleaner
 				superOrJointRulesDictionary.TryAdd(rule, new HashSet<UMatrixRule>(superRules));
 			});
 
-			sw.Stop();
-			logger.LogDebug("初始化{0}用时{1}毫秒", nameof(RuleRelationshipManager), sw.ElapsedMilliseconds);
+			if (logger.IsEnabled(LogLevel.Debug))
+			{
+				sw.Stop();
+				logger.LogDebug("初始化{0}用时{1}毫秒", nameof(RuleRelationshipManager), sw.ElapsedMilliseconds);
+			}
 		}
 
 		public ICollection<UMatrixRule> GetSuperOrJointRules(UMatrixRule rule)
@@ -173,7 +181,7 @@ namespace uMatrixCleaner
 				}
 			}
 
-			logger.LogDebug("{0}变量节省了{1}次查询。", nameof(processedRules), savedSearch);
+			logger.LogDebug("变量{0}节省了{1}次查询。", nameof(processedRules), savedSearch);
 
 			foreach (var newRule in newRules)
 			{

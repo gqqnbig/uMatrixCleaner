@@ -51,17 +51,22 @@ namespace uMatrixCleaner
 			var ruleManager = new RuleRelationshipManager(workingRules.ToList());
 			ruleManager.MergeEvent += (sender, e) =>
 			{
-				var info = "合并" + string.Join("、\r\n    ", e.RulesToDelete.Select(r => r.ToString("\t")));
-				info += "\r\n  为" + e.MasterRule.ToString("\t") + "。";
-				logger.LogInformation(info);
+				if (logger.IsEnabled(LogLevel.Information))
+				{
+					var info = "合并" + string.Join("、\r\n    ", e.RulesToDelete.Select(r => r.ToString("\t")));
+					info += "\r\n  为" + e.MasterRule.ToString("\t") + "。";
+					logger.LogInformation(info);
+				}
 			};
 
 			ruleManager.DedupEvent += (sender, e) =>
 			 {
-
-				 var info = "删除    " + string.Join("、\r\n        ", e.DuplicateRules.Select(r => r.ToString("\t")));
-				 info += $"\r\n因为它被{e.MasterRule.ToString("\t")}包含。";
-				 logger.LogInformation(info);
+				 if (logger.IsEnabled(LogLevel.Information))
+				 {
+					 var info = "删除    " + string.Join("、\r\n        ", e.DuplicateRules.Select(r => r.ToString("\t")));
+					 info += $"\r\n因为它被{e.MasterRule.ToString("\t")}包含。";
+					 logger.LogInformation(info);
+				 }
 			 };
 
 
