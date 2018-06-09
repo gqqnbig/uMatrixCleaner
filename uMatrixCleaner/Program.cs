@@ -11,6 +11,7 @@ namespace uMatrixCleaner
 	public class Program
 	{
 		private static readonly ILogger logger;
+		private static Options options;
 
 		static Program()
 		{
@@ -29,29 +30,12 @@ namespace uMatrixCleaner
 			try
 			{
 
-				var options = new Options();
-				var argList = new List<string>(args);
-				options.Log = Options.GetOptionalNamedOptionArgument(argList, "--Log", "d");
-				options.MergeThreshold = Options.GetOptionalNamedOptionArgument(argList, "--MergeThreshold", 3);
-				options.IsVerbose = Options.GetBooleanOption(argList, "--Verbose");
-				var p = argList.IndexOf("--");
-				if (p > -1)
-					argList.RemoveAt(p);
-				var unknownOptions = argList.Where(item => item.StartsWith("-"));
-				if (unknownOptions.Any())
-				{
-					logger.LogError("未能识别命名参数：{0}", string.Join(" ", unknownOptions));
-					return;
-				}
-				if (argList.Count > 2)
-				{
-					logger.LogError("最多支持2个位置参数，而实际发现{0}个：{1}", argList.Count, string.Join(" ", argList));
-					return;
-				}
+				options = new Options();
+				if (ParseOptions(args)) return;
 
-				options.InputFilePath = argList[0];
-				if (argList.Count == 2)
-					options.OutputFilePath = argList[1];
+
+
+
 
 
 				if (options.Log != null)
@@ -141,7 +125,7 @@ namespace uMatrixCleaner
 			 };
 
 
-			var newRules = ruleManager.Clean(3);
+			var newRules = ruleManager.Clean(options.MergeThreshold);
 			sw.Stop();
 			logger.LogDebug("合并用时{0}毫秒", sw.ElapsedMilliseconds);
 
@@ -149,5 +133,35 @@ namespace uMatrixCleaner
 			return string.Join(Environment.NewLine, ignoredLines) + string.Join(Environment.NewLine, exemptedRules.Union(newRules));
 
 		}
+
+
+		private static bool ParseOptions(string[] args)
+		{
+			var argList = new List<string>(args);
+			options.Log = Options.GetOptionalNamedOptionArgument(argList, "--Log", "d");
+			options.MergeThreshold = Options.GetOptionalNamedOptionArgument(argList, "--MergeThreshold", 3);
+			options.IsVerbose = Options.GetBooleanOption(argList, "--Verbose");
+			var p = argList.IndexOf("--");
+			if (p > -1)
+				argList.RemoveAt(p);
+			var unknownOptions = argList.Where(item => item.StartsWith("-"));
+			if (unknownOptions.Any())
+			{
+				logger.LogError("未能识别命名参数：{0}", string.Join(" ", unknownOptions));
+				return true;
+			}
+
+			if (argList.Count > 2)
+			{
+				logger.LogError("最多支持2个位置参数，而实际发现{0}个：{1}", argList.Count, string.Join(" ", argList));
+				return true;
+			}
+
+			options.InputFilePath = argList[0];
+			if (argList.Count == 2)
+				options.OutputFilePath = argList[1];
+			return false;
+		}
+
 	}
 }
