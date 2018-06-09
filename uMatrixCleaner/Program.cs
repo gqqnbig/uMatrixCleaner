@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using CommandLine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
 
 namespace uMatrixCleaner
 {
@@ -29,13 +28,63 @@ namespace uMatrixCleaner
 		{
 			try
 			{
-				var result = new Parser(with =>
-				{
-					with.EnableDashDash = true;
-					with.HelpWriter = Console.Error;
-				}).ParseArguments<Options>(args);
 
-				Clean(System.IO.File.ReadAllText(@"D:\Documents\Visual Studio 2017\Projects\uMatrixCleaner\test.txt"));
+				var options = new Options();
+				var argList = new List<string>(args);
+				options.Log = Options.GetOptionalNamedOptionArgument(argList, "--Log", "d");
+				options.MergeThreshold = Options.GetOptionalNamedOptionArgument(argList, "--MergeThreshold", 3);
+				options.IsVerbose = Options.GetBooleanOption(argList, "--Verbose");
+				var p = argList.IndexOf("--");
+				if (p > -1)
+					argList.RemoveAt(p);
+				var unknownOptions = argList.Where(item => item.StartsWith("-"));
+				if (unknownOptions.Any())
+				{
+					logger.LogError("未能识别命名参数：{0}", string.Join(" ", unknownOptions));
+					return;
+				}
+				if (argList.Count > 2)
+				{
+					logger.LogError("最多支持2个位置参数，而实际发现{0}个：{1}", argList.Count, string.Join(" ", argList));
+					return;
+				}
+
+				options.InputFilePath = argList[0];
+				if (argList.Count == 2)
+					options.OutputFilePath = argList[1];
+
+
+				if (options.Log != null)
+				{
+					var config = new NLog.Config.LoggingConfiguration();
+
+
+					var logFile = new NLog.Targets.FileTarget("logfile");
+					if (options.Log == "d")
+					{
+						logFile.FileName = "uMatrixCleaner.log";
+						logFile.ArchiveEvery = NLog.Targets.FileArchivePeriod.Day;
+					}
+					else
+						logFile.FileName = options.OutputFilePath;
+					config.AddRule(options.IsVerbose ? NLog.LogLevel.Debug : NLog.LogLevel.Info, NLog.LogLevel.Fatal, logFile);
+
+					NLog.LogManager.Configuration = config;
+
+					ApplicationLogging.LoggerFactory.AddNLog(new NLogProviderOptions { IgnoreEmptyEventId = true });
+				}
+
+
+				var outputString = Clean(File.ReadAllText(options.InputFilePath));
+
+				if (string.IsNullOrEmpty(options.OutputFilePath))
+				{
+					var path = Path.GetDirectoryName(options.InputFilePath);
+					path = Path.Combine(path, "uMatrixRules-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".txt");
+					File.WriteAllText(path, outputString);
+				}
+				else
+					File.WriteAllText(options.OutputFilePath, outputString);
 
 			}
 			finally
@@ -45,11 +94,13 @@ namespace uMatrixCleaner
 		}
 
 
-		static void Clean(string input)
+		static string Clean(string input)
 		{
-			var rules = from line in input.Split("\r\n")
-						where line.Length > 0 && line.StartsWith("matrix-off") == false && line.StartsWith("noscript-spoof") == false && line.Contains("#") == false
-						select new UMatrixRule(line);
+			var lines = input.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+			var ignoredLines = (from line in lines
+								where line.StartsWith("matrix-off") || line.StartsWith("noscript-spoof") || line.Contains("#")
+								select line).ToArray();
+			var rules = lines.Except(ignoredLines).Select(l => new UMatrixRule(l)).ToArray();
 
 
 
@@ -59,9 +110,11 @@ namespace uMatrixCleaner
                 //r=>r.Source.Value=="*" && r.Destination.Value!="*" && (r.Type.HasFlag(TypePredicate.Script) || r.Type.HasFlag(TypePredicate.Frame)),
                 r=>r.Selector.Destination.Value=="simg.sinajs.cn"
 			};
-			var workingRules = new HashSet<UMatrixRule>(from rule in rules
-														where examptedFromRemoving.All(p => p(rule) == false)
-														select rule);
+			var exemptedRules = (from rule in rules
+								 where examptedFromRemoving.Any(p => p(rule))
+								 select rule).ToArray();
+
+			var workingRules = new HashSet<UMatrixRule>(rules.Except(exemptedRules));
 
 
 			var sw = new System.Diagnostics.Stopwatch();
@@ -88,14 +141,13 @@ namespace uMatrixCleaner
 			 };
 
 
-			ruleManager.Clean(3);
+			var newRules = ruleManager.Clean(3);
 			sw.Stop();
 			logger.LogDebug("合并用时{0}毫秒", sw.ElapsedMilliseconds);
 
 
-			//throw new NotImplementedException();
+			return string.Join(Environment.NewLine, ignoredLines) + string.Join(Environment.NewLine, exemptedRules.Union(newRules));
+
 		}
 	}
-
-
 }
