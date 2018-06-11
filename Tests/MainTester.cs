@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Tests
 {
-    public class TestMain
+    public class MainTester
     {
         [Fact]
         public static void TestDeduplicate()
@@ -40,6 +40,18 @@ namespace Tests
 			relationshipManager.MergeEvent += (_, __) => Assert.False(true, "不应该执行合并。");
 			rules = relationshipManager.Clean(int.MaxValue);
 			Assert.Equal(3, rules.Count);
+
+
+	        r1 = new UMatrixRule("* * * block");
+	        r2 = new UMatrixRule("* 1st-party * allow");
+	        r3 = new UMatrixRule("big-cup.tv big-cup.tv cookie block");
+	        rules = new List<UMatrixRule>(new[] { r1, r2, r3 });
+	        relationshipManager = new RuleRelationshipManager(rules);
+
+	        relationshipManager.DedupEvent += (_, __) => Assert.False(true, "不应该执行去重。");
+	        relationshipManager.MergeEvent += (_, __) => Assert.False(true, "不应该执行合并。");
+	        rules = relationshipManager.Clean(int.MaxValue);
+	        Assert.Equal(3, rules.Count);
 		}
 
 		[Fact]

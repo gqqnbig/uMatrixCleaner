@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Tests
 {
-    public class TestUMatrixRule
+    public class UMatrixRuleTester
     {
         [Theory]
         [InlineData("thisav.com * cookie", "* 1st-party cookie", true)]
