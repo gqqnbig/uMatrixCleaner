@@ -165,10 +165,23 @@ namespace uMatrixCleaner
 
 			if (events != null)
 			{
-				using (XmlWriter xmlWriter = XmlWriter.Create(options.Log == "d" ? "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml" : options.Log, new XmlWriterSettings { Indent = true }))
+				var xmlPath = options.Log == "d" ? System.IO.Path.Combine(AppContext.BaseDirectory, "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : options.Log;
+				using (XmlWriter xmlWriter = XmlWriter.Create(xmlPath, new XmlWriterSettings { Indent = true }))
 				{
-					new XmlSerializer(events.GetType(),  new[] { typeof(MergeEventArgs), typeof(DedupRuleEventArgs) }).Serialize(xmlWriter, events);
+					xmlWriter.WriteProcessingInstruction("xml-stylesheet", "type=\"text/xsl\" href=\"styles.xsl\"");
+					new XmlSerializer(events.GetType(), new[] { typeof(MergeEventArgs), typeof(DedupRuleEventArgs) }).Serialize(xmlWriter, events);
 				}
+
+				var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+				using (var resource = assembly.GetManifestResourceStream(assembly.GetName().Name + ".styles.xsl"))
+				{
+					using (var file = new FileStream(Path.Combine(Path.GetDirectoryName(xmlPath), "styles.xsl"), FileMode.Create, FileAccess.Write))
+					{
+						resource.CopyTo(file);
+					}
+				}
+
+
 
 				//反序列化的代码如下
 				//using (var xmlReader = XmlReader.Create("a.xml", new XmlReaderSettings { IgnoreWhitespace = true }))
