@@ -345,10 +345,10 @@ namespace uMatrixCleaner
 			{
 				if (specificity == -1)
 				{
-					if (HostType == UriHostNameType.Basic)
-						specificity = 0;
-					else if (Value == "1st-party")
+					if (Value == "1st-party")
 						specificity = 1;
+					else if (HostType == UriHostNameType.Basic)
+						specificity = 0;
 					else if (IsIP)
 						specificity = 1;
 					else
