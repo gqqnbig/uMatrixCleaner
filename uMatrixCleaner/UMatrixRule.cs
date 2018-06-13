@@ -6,7 +6,7 @@ using uMatrixCleaner.Xml;
 
 namespace uMatrixCleaner
 {
-	public class UMatrixRule : IXmlSerializable
+	public class UMatrixRule : IXmlSerializable, IEquatable<UMatrixRule>
 	{
         public bool IsAllow { get; }
 
@@ -39,6 +39,15 @@ namespace uMatrixCleaner
             var other = obj as UMatrixRule;
             if (other == null)
                 return false;
+
+            return Equals(other);
+        }
+
+		public bool Equals(UMatrixRule obj)
+		{
+			var other = obj as UMatrixRule;
+			if (other == null)
+				return false;
 
             return Selector.Equals(other.Selector) && IsAllow == other.IsAllow;
         }
