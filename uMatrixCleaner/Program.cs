@@ -198,7 +198,15 @@ namespace uMatrixCleaner
 
 		private static bool ParseOptions(string[] args)
 		{
+
 			var argList = new List<string>(args);
+
+			if (args.Length == 0 || Options.GetBooleanOption(argList, "--Help"))
+			{
+				Console.Write(File.ReadAllText("README.md"));
+				return true;
+			}
+
 			options.Log = Options.GetOptionalNamedOptionArgument(argList, "--Log", "d");
 			options.MergeThreshold = Options.GetOptionalNamedOptionArgument(argList, "--MergeThreshold", 3);
 			options.IsVerbose = Options.GetBooleanOption(argList, "--Verbose");
