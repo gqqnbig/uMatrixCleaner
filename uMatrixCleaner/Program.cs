@@ -117,9 +117,12 @@ namespace uMatrixCleaner
 
 			Predicate<UMatrixRule>[] examptedFromRemoving =
 			{
-                //r=>r.ToString().Contains("#") || r.ToString()=="* * script block" || r.ToString()=="* * frame block",
-                //r=>r.Source.Value=="*" && r.Destination.Value!="*" && (r.Type.HasFlag(TypePredicate.Script) || r.Type.HasFlag(TypePredicate.Frame)),
-                r=>r.Selector.Destination.Value=="simg.sinajs.cn"
+				r=>r.ToString()=="* * * block", //不删除默认规则
+				r=>r.ToString()=="* * css allow",
+				r=>r.ToString()=="* * frame block",
+				r=>r.ToString()=="* * image allow",
+				r=>r.ToString()=="* 1st-party * allow",
+				r=>r.ToString()=="* 1st-party frame allow"
 			};
 			var exemptedRules = (from rule in rules
 								 where examptedFromRemoving.Any(p => p(rule))
