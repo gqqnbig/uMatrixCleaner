@@ -237,15 +237,6 @@ namespace uMatrixCleaner
 						resource.CopyTo(file);
 					}
 				}
-
-
-
-				//反序列化的代码如下
-				//using (var xmlReader = XmlReader.Create("a.xml", new XmlReaderSettings { IgnoreWhitespace = true }))
-				//{
-				//	var obj = (Xml.EventClass)new XmlSerializer(list.GetType(), new[] { typeof(MergeEventArgs), typeof(DedupRuleEventArgs) }).Deserialize(xmlReader);
-
-				//}
 			}
 
 			return newRules;
