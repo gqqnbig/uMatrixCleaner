@@ -135,8 +135,13 @@ namespace uMatrixCleaner
 
 			if (options.Log != null)
 				events = new EventsHelper();
-			var sw = new System.Diagnostics.Stopwatch();
-			sw.Start();
+			Stopwatch sw = null;
+			if (logger.IsEnabled(LogLevel.Debug))
+			{
+				sw = new System.Diagnostics.Stopwatch();
+				sw.Start();
+			}
+
 			var ruleManager = new RuleRelationshipManager(workingRules.ToList());
 			ruleManager.MergeEvent += (sender, e) =>
 			{
@@ -163,8 +168,12 @@ namespace uMatrixCleaner
 
 
 			var newRules = ruleManager.Clean(options.MergeThreshold);
-			sw.Stop();
-			logger.LogDebug("合并用时{0}毫秒", sw.ElapsedMilliseconds);
+			if (sw != null)
+			{
+				sw.Stop();
+				logger.LogDebug("合并用时{0}毫秒", sw.ElapsedMilliseconds);
+			}
+
 
 			if (events != null)
 			{
