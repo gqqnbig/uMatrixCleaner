@@ -33,6 +33,16 @@ namespace uMatrixCleaner
 		//[Option('m', "MergeThreshold", HelpText = "具有多少个相似规则时允许合并。", Required = false, Default = 3)]
 		public int MergeThreshold { get; set; }
 
+		/// <summary>
+		///检查以往日志，如果一条规则以前被删除过，但现在又出现，则不删除此规则。
+		/// </summary>
+		public string CheckLog { get; set; }
+
+		/// <summary>
+		/// 随机删除百分之多少的规则。
+		/// </summary>
+		public int RandomDelete { get; set; }
+
 		internal static bool GetBooleanOption(List<string> args, string option)
 		{
 			int p = args.IndexOf(option);

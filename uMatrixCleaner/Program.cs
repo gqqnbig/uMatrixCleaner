@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Serialization;
+using System.Xml.XPath;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using uMatrixCleaner.Xml;
@@ -115,22 +118,64 @@ namespace uMatrixCleaner
 
 
 
-			Predicate<UMatrixRule>[] examptedFromRemoving =
+			List<Predicate<UMatrixRule>> examptedFromRemoving = new List<Predicate<UMatrixRule>>(new Predicate<UMatrixRule>[]
+				{
+					r=>r.ToString()=="* * * block", //不删除默认规则
+					r=>r.ToString()=="* * css allow",
+					r=>r.ToString()=="* * frame block",
+					r=>r.ToString()=="* * image allow",
+					r=>r.ToString()=="* 1st-party * allow",
+					r=>r.ToString()=="* 1st-party frame allow"
+				});
+			if (options.CheckLog != null)
 			{
-				r=>r.ToString()=="* * * block", //不删除默认规则
-				r=>r.ToString()=="* * css allow",
-				r=>r.ToString()=="* * frame block",
-				r=>r.ToString()=="* * image allow",
-				r=>r.ToString()=="* 1st-party * allow",
-				r=>r.ToString()=="* 1st-party frame allow"
-			};
-			var exemptedRules = (from rule in rules
-								 where examptedFromRemoving.Any(p => p(rule))
-								 select rule).ToArray();
+				var deletedRules = new List<UMatrixRule>();
+				var serializer = new XmlSerializer(typeof(UMatrixRule));
+				foreach (var fileName in Directory.EnumerateFiles(options.CheckLog == string.Empty ? AppContext.BaseDirectory : options.CheckLog, "*.xml"))
+				{
+					try
+					{
+						XDocument doc = XDocument.Load(fileName);
+						var deletedRuleElements = doc.XPathSelectElements("(//DedupRuleEvent/DuplicateRules|//MergeEvent/RulesToDelete)/UMatrixRule");
 
-			var workingRules = new HashSet<UMatrixRule>(rules.Except(exemptedRules));
+						foreach (var deletedRuleElement in deletedRuleElements)
+						{
+							using (var reader = deletedRuleElement.CreateReader())
+							{
+								var rule = (UMatrixRule)serializer.Deserialize(reader);
+								deletedRules.Add(rule);
+							}
+						}
+					}
+					catch (Exception ex) { logger.LogInformation(ex, "读入日志失败。日志路径为{0}", fileName); }
+				}
 
+				examptedFromRemoving.Add(rule => deletedRules.Contains(rule));
+			}
 
+			var isExamptedRules = rules.ToLookup(rule => examptedFromRemoving.Any(p => p(rule)));
+
+			HashSet<UMatrixRule> workingRules = new HashSet<UMatrixRule>();
+			var random = new Random();
+			foreach (var rule in isExamptedRules[false])
+			{
+				if (options.RandomDelete > 0)
+				{
+					if (random.Next(0, 100) <= options.RandomDelete)
+						logger.LogInformation("{0}被随机删除。", rule);
+					else
+						workingRules.Add(rule);
+				}
+			}
+
+			var newWorkingRules = MergeRules(workingRules);
+
+			return string.Join(Environment.NewLine, ignoredLines) + string.Join(Environment.NewLine, isExamptedRules[true].Union(newWorkingRules));
+
+		}
+
+		private static List<UMatrixRule> MergeRules(HashSet<UMatrixRule> workingRules)
+		{
 			EventsHelper events = null;
 
 			if (options.Log != null)
@@ -203,8 +248,7 @@ namespace uMatrixCleaner
 				//}
 			}
 
-			return string.Join(Environment.NewLine, ignoredLines) + string.Join(Environment.NewLine, exemptedRules.Union(newRules));
-
+			return newRules;
 		}
 
 
@@ -222,6 +266,8 @@ namespace uMatrixCleaner
 			options.Log = Options.GetOptionalNamedOptionArgument(argList, "--Log", "d");
 			options.MergeThreshold = Options.GetOptionalNamedOptionArgument(argList, "--MergeThreshold", 3);
 			options.IsVerbose = Options.GetBooleanOption(argList, "--Verbose");
+			options.CheckLog = Options.GetOptionalNamedOptionArgument(argList, "--CheckLog", string.Empty);
+			options.RandomDelete = Options.GetOptionalNamedOptionArgument(argList, "--RandomDelete", 5);
 			var p = argList.IndexOf("--");
 			if (p > -1)
 				argList.RemoveAt(p);
