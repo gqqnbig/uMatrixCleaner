@@ -118,7 +118,7 @@ namespace uMatrixCleaner
 
 
 
-			List<Predicate<UMatrixRule>> examptedFromRemoving = new List<Predicate<UMatrixRule>>(new Predicate<UMatrixRule>[]
+			List<Predicate<UMatrixRule>> fixedRulePredicates = new List<Predicate<UMatrixRule>>(new Predicate<UMatrixRule>[]
 				{
 					r=>r.ToString()=="* * * block", //不删除默认规则
 					r=>r.ToString()=="* * css allow",
@@ -129,57 +129,26 @@ namespace uMatrixCleaner
 				});
 			if (options.CheckLog != null)
 			{
-				var deletedRules = new List<UMatrixRule>();
-				var serializer = new XmlSerializer(typeof(UMatrixRule));
-				foreach (var fileName in Directory.EnumerateFiles(options.CheckLog == string.Empty ? AppContext.BaseDirectory : options.CheckLog, "*.xml"))
-				{
-					try
-					{
-						XDocument doc = XDocument.Load(fileName);
-						var deletedRuleElements = doc.XPathSelectElements("(//DedupRuleEvent/DuplicateRules|//MergeEvent/RulesToDelete)/UMatrixRule");
-
-						foreach (var deletedRuleElement in deletedRuleElements)
-						{
-							using (var reader = deletedRuleElement.CreateReader())
-							{
-								var rule = (UMatrixRule)serializer.Deserialize(reader);
-								deletedRules.Add(rule);
-							}
-						}
-					}
-					catch (Exception ex) { logger.LogInformation(ex, "读入日志失败。日志路径为{0}", fileName); }
-				}
-
-				examptedFromRemoving.Add(rule => deletedRules.Contains(rule));
+				var deletedRules = ReadHistorialDeletions();
+				fixedRulePredicates.Add(rule => deletedRules.Contains(rule));
 			}
 
-			var isExamptedRules = rules.ToLookup(rule => examptedFromRemoving.Any(p => p(rule)));
+			var isFixedRules = rules.ToLookup(rule => fixedRulePredicates.Any(p => p(rule)));
 
 			HashSet<UMatrixRule> workingRules = new HashSet<UMatrixRule>();
 			var random = new Random();
-			foreach (var rule in isExamptedRules[false])
+			foreach (var rule in isFixedRules[false])
 			{
-				if (options.RandomDelete > 0)
-				{
-					if (random.Next(0, 100) <= options.RandomDelete)
-						logger.LogInformation("{0}被随机删除。", rule);
-					else
-						workingRules.Add(rule);
-				}
+				if (options.RandomDelete > 0 && random.Next(0, 100) <= options.RandomDelete)
+					logger.LogInformation("{0}被随机删除。", rule);
+				else
+					workingRules.Add(rule);
 			}
 
-			var newWorkingRules = MergeRules(workingRules);
+			//不可删除的规则也要参与锁定
+			RuleRelationshipManager ruleManager = new RuleRelationshipManager(workingRules.Union(isFixedRules[true]).ToList());
+			EventsHelper events = options.Log != null ? new EventsHelper() : null;
 
-			return string.Join(Environment.NewLine, ignoredLines) + string.Join(Environment.NewLine, isExamptedRules[true].Union(newWorkingRules));
-
-		}
-
-		private static List<UMatrixRule> MergeRules(HashSet<UMatrixRule> workingRules)
-		{
-			EventsHelper events = null;
-
-			if (options.Log != null)
-				events = new EventsHelper();
 			Stopwatch sw = null;
 			if (logger.IsEnabled(LogLevel.Debug))
 			{
@@ -187,7 +156,6 @@ namespace uMatrixCleaner
 				sw.Start();
 			}
 
-			var ruleManager = new RuleRelationshipManager(workingRules.ToList());
 			ruleManager.MergeEvent += (sender, e) =>
 			{
 				if (logger.IsEnabled(LogLevel.Information))
@@ -201,15 +169,15 @@ namespace uMatrixCleaner
 			};
 
 			ruleManager.DedupEvent += (sender, e) =>
-			 {
-				 if (logger.IsEnabled(LogLevel.Information))
-				 {
-					 var info = "删除    " + string.Join("、\r\n        ", e.DuplicateRules.Select(r => r.ToString("\t")));
-					 info += $"\r\n因为它被{e.MasterRule.ToString("\t")}包含。";
-					 logger.LogInformation(info);
-				 }
-				 events?.Events.Add(e);
-			 };
+			{
+				if (logger.IsEnabled(LogLevel.Information))
+				{
+					var info = "删除    " + string.Join("、\r\n        ", e.DuplicateRules.Select(r => r.ToString("\t")));
+					info += $"\r\n因为它被{e.MasterRule.ToString("\t")}包含。";
+					logger.LogInformation(info);
+				}
+				events?.Events.Add(e);
+			};
 
 
 			var newRules = ruleManager.Clean(options.MergeThreshold);
@@ -221,25 +189,59 @@ namespace uMatrixCleaner
 
 
 			if (events != null)
-			{
-				var xmlPath = options.Log == "d" ? System.IO.Path.Combine(AppContext.BaseDirectory, "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : options.Log;
-				using (XmlWriter xmlWriter = XmlWriter.Create(xmlPath, new XmlWriterSettings { Indent = true }))
-				{
-					xmlWriter.WriteProcessingInstruction("xml-stylesheet", "type=\"text/xsl\" href=\"styles.xsl\"");
-					new XmlSerializer(events.GetType(), new[] { typeof(MergeEventArgs), typeof(DedupRuleEventArgs) }).Serialize(xmlWriter, events);
-				}
+				SaveEvents(events);
+			var newWorkingRules = newRules;
 
-				var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-				using (var resource = assembly.GetManifestResourceStream(assembly.GetName().Name + ".styles.xsl"))
+			return string.Join(Environment.NewLine, ignoredLines) + string.Join(Environment.NewLine, isFixedRules[true].Union(newWorkingRules));
+
+		}
+
+		private static List<UMatrixRule> ReadHistorialDeletions()
+		{
+			var deletedRules = new List<UMatrixRule>();
+			var serializer = new XmlSerializer(typeof(UMatrixRule));
+			foreach (var fileName in Directory.EnumerateFiles(options.CheckLog == string.Empty ? AppContext.BaseDirectory : options.CheckLog, "*.xml"))
+			{
+				try
 				{
-					using (var file = new FileStream(Path.Combine(Path.GetDirectoryName(xmlPath), "styles.xsl"), FileMode.Create, FileAccess.Write))
+					XDocument doc = XDocument.Load(fileName);
+					var deletedRuleElements = doc.XPathSelectElements("(//DedupRuleEvent/DuplicateRules|//MergeEvent/RulesToDelete)/UMatrixRule");
+
+					foreach (var deletedRuleElement in deletedRuleElements)
 					{
-						resource.CopyTo(file);
+						using (var reader = deletedRuleElement.CreateReader())
+						{
+							var rule = (UMatrixRule)serializer.Deserialize(reader);
+							deletedRules.Add(rule);
+						}
 					}
+				}
+				catch (Exception ex)
+				{
+					logger.LogInformation(ex, "读入日志失败。日志路径为{0}", fileName);
 				}
 			}
 
-			return newRules;
+			return deletedRules;
+		}
+
+		private static void SaveEvents(EventsHelper events)
+		{
+			var xmlPath = options.Log == "d" ? System.IO.Path.Combine(AppContext.BaseDirectory, "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : options.Log;
+			using (XmlWriter xmlWriter = XmlWriter.Create(xmlPath, new XmlWriterSettings { Indent = true }))
+			{
+				xmlWriter.WriteProcessingInstruction("xml-stylesheet", "type=\"text/xsl\" href=\"styles.xsl\"");
+				new XmlSerializer(events.GetType(), new[] { typeof(MergeEventArgs), typeof(DedupRuleEventArgs) }).Serialize(xmlWriter, events);
+			}
+
+			var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+			using (var resource = assembly.GetManifestResourceStream(assembly.GetName().Name + ".styles.xsl"))
+			{
+				using (var file = new FileStream(Path.Combine(Path.GetDirectoryName(xmlPath), "styles.xsl"), FileMode.Create, FileAccess.Write))
+				{
+					resource.CopyTo(file);
+				}
+			}
 		}
 
 
