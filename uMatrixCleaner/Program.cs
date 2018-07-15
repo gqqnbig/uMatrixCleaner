@@ -192,7 +192,7 @@ namespace uMatrixCleaner
 				SaveEvents(events);
 			var newWorkingRules = newRules;
 
-			return string.Join(Environment.NewLine, ignoredLines)+ Environment.NewLine + string.Join(Environment.NewLine, isFixedRules[true].Union(newWorkingRules));
+			return string.Join(Environment.NewLine, ignoredLines) + Environment.NewLine + string.Join(Environment.NewLine, isFixedRules[true].Union(newWorkingRules));
 
 		}
 
@@ -222,6 +222,7 @@ namespace uMatrixCleaner
 				}
 			}
 
+			logger.LogInformation("载入{0}条历史被删记录。", deletedRules.Count);
 			return deletedRules;
 		}
 
