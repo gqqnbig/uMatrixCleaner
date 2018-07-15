@@ -271,6 +271,12 @@ namespace uMatrixCleaner
 				return true;
 			}
 
+			if (argList.Count == 0)
+			{
+				logger.LogError("至少存在1个位置参数，而实际发现0个。");
+				return true;
+			}
+
 			if (argList.Count > 2)
 			{
 				logger.LogError("最多支持2个位置参数，而实际发现{0}个：{1}", argList.Count, string.Join(" ", argList));
