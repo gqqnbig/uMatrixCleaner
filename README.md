@@ -4,11 +4,11 @@
 
 ## 命令行参数
 
- ### --Help
- 显示帮助
+### --Help
+显示帮助
 
- ### -Log
- 保存XML日志。如果本选项后带有参数"d"，则日志保存在[当前目录](https://docs.microsoft.com/zh-cn/dotnet/api/system.appcontext.basedirectory?view=netframework-4.7.2)，文件名是uMatrix-_日期_.xml。如果参数是其他值，则该值指定日志的完整路径。
+### -Log
+保存XML日志。如果本选项后带有参数"d"，则日志保存在[当前目录](https://docs.microsoft.com/zh-cn/dotnet/api/system.appcontext.basedirectory?view=netframework-4.7.2)，文件名是uMatrix-_日期_.xml。如果参数是其他值，则该值指定日志的完整路径。
 
 ### --MergeThreshold [x]
 x为整数，默认值为3。
