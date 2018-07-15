@@ -10,8 +10,10 @@
  ### -Log
  保存XML日志。如果本选项后带有参数"d"，则日志保存在[当前目录](https://docs.microsoft.com/zh-cn/dotnet/api/system.appcontext.basedirectory?view=netframework-4.7.2)，文件名是uMatrix-_日期_.xml。如果参数是其他值，则该值指定日志的完整路径。
 
-### --MergeThreshold
-合并类似规则的阀值。默认值为3。
+### --MergeThreshold x
+x为整数。
+
+设置合并类似规则的阀值。如果不设置，则采用默认值3。
 
 当阀值为3时，
 
@@ -37,7 +39,9 @@
 。
 
 ### --RandomDelete x
-随机删除百分之x的规则。x的默认值为5。
+x为整数。
+
+设置随机删除百分之x的规则。如果不设置，则采用默认值5。
 
 ### --Verbose
 在命令行中输出详细信息
