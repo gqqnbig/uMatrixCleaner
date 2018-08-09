@@ -192,7 +192,7 @@ namespace uMatrixCleaner
 				SaveEvents(events);
 			var newWorkingRules = newRules;
 
-			return string.Join(Environment.NewLine, ignoredLines)+ Environment.NewLine + string.Join(Environment.NewLine, isFixedRules[true].Union(newWorkingRules));
+			return string.Join(Environment.NewLine, ignoredLines) + Environment.NewLine + string.Join(Environment.NewLine, isFixedRules[true].Union(newWorkingRules));
 
 		}
 
@@ -222,6 +222,7 @@ namespace uMatrixCleaner
 				}
 			}
 
+			logger.LogInformation("载入{0}条历史被删记录。", deletedRules.Count);
 			return deletedRules;
 		}
 
@@ -268,6 +269,12 @@ namespace uMatrixCleaner
 			if (unknownOptions.Any())
 			{
 				logger.LogError("未能识别命名参数：{0}", string.Join(" ", unknownOptions));
+				return true;
+			}
+
+			if (argList.Count == 0)
+			{
+				logger.LogError("至少存在1个位置参数，而实际发现0个。");
 				return true;
 			}
 
