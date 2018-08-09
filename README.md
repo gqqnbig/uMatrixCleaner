@@ -3,6 +3,8 @@
 <h1> <img src="https://github.com/gqqnbig/uMatrixCleaner/raw/master/uMatrixCleaner/icon_128.png" width="32" /> μMatrix规则清理器 </h1>
 
 ## 命令行参数
+用中括号包起来的元素为可选项。如`--MergeThreshold [x]`表示可以输入`--MergeThreshold 4`或`--MergeThreshold`。
+
 
 ### --Help
 显示帮助
