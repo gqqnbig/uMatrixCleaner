@@ -23,7 +23,7 @@ namespace uMatrixCleaner
 		{
 			var builder = new ConfigurationBuilder()
 				.SetBasePath(Directory.GetCurrentDirectory())
-				.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+				.AddJsonFile(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "appsettings.json"), optional: true, reloadOnChange: true);
 			var configuration = builder.Build();
 
 			ApplicationLogging.LoggerFactory.AddConsole(configuration.GetSection("Logging"));

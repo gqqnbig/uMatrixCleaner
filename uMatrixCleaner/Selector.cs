@@ -314,7 +314,7 @@ namespace uMatrixCleaner
         //https://url.spec.whatwg.org/#host-representation ，Host是Domain或IP的统称。
 
 
-        internal static readonly DomainParser domainParser = new DomainParser(new FileTldRuleProvider("public_suffix_list.dat"));
+        internal static readonly DomainParser domainParser = new DomainParser(new FileTldRuleProvider(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "public_suffix_list.dat")));
 
         public static readonly HostPredicate N1stParty = new HostPredicate("1st-party");
 
