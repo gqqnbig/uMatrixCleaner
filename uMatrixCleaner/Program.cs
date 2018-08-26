@@ -125,7 +125,8 @@ namespace uMatrixCleaner
 					r=>r.ToString()=="* * frame block",
 					r=>r.ToString()=="* * image allow",
 					r=>r.ToString()=="* 1st-party * allow",
-					r=>r.ToString()=="* 1st-party frame allow"
+					r=>r.ToString()=="* 1st-party frame allow",
+					r=>r.ToString()=="* 1st-party script allow"
 				});
 			if (options.CheckLog != null)
 			{
