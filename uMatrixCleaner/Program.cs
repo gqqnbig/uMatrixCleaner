@@ -120,13 +120,7 @@ namespace uMatrixCleaner
 
 			List<Predicate<UMatrixRule>> fixedRulePredicates = new List<Predicate<UMatrixRule>>(new Predicate<UMatrixRule>[]
 				{
-					r=>r.ToString()=="* * * block", //不删除默认规则
-					r=>r.ToString()=="* * css allow",
-					r=>r.ToString()=="* * frame block",
-					r=>r.ToString()=="* * image allow",
-					r=>r.ToString()=="* 1st-party * allow",
-					r=>r.ToString()=="* 1st-party frame allow",
-					r=>r.ToString()=="* 1st-party script allow"
+					r=>r.Selector.Source=="*" && (r.Selector.Destination=="*" || r.Selector.Destination==HostPredicate.N1stParty)//不删除默认规则
 				});
 			if (options.CheckLog != null)
 			{
