@@ -23,7 +23,7 @@ namespace uMatrixCleaner
 		{
 			var builder = new ConfigurationBuilder()
 				.SetBasePath(Directory.GetCurrentDirectory())
-				.AddJsonFile(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "appsettings.json"), optional: true, reloadOnChange: true);
+				.AddJsonFile(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.AppContext.BaseDirectory), "appsettings.json"), optional: true, reloadOnChange: true);
 			var configuration = builder.Build();
 
 			ApplicationLogging.LoggerFactory.AddConsole(configuration.GetSection("Logging"));
@@ -248,7 +248,7 @@ namespace uMatrixCleaner
 
 			if (args.Length == 0 || Options.GetBooleanOption(argList, "--Help"))
 			{
-				Console.Write(File.ReadAllText("README.md"));
+				Console.Write(File.ReadAllText(System.IO.Path.Combine(System.AppContext.BaseDirectory, "README.md")));
 				return true;
 			}
 
