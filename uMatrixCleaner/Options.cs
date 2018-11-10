@@ -118,7 +118,15 @@ namespace uMatrixCleaner
 					var value = args[p + 1];
 					args.RemoveAt(p);
 					args.RemoveAt(p);
-					return (T)Convert.ChangeType(value, typeof(T));
+
+					try
+					{
+						return (T)Convert.ChangeType(value, typeof(T));
+					}
+					catch (Exception)
+					{
+						throw new FormatException($"Unable to convert value \"{value}\" to type \"{typeof(T).Name}\".");
+					}
 				}
 			}
 		}
