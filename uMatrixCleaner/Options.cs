@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace uMatrixCleaner
 {
-	class Options
+	public class Options
 	{
 		/// <summary>
 		/// uMatrix规则文件
@@ -43,11 +43,11 @@ namespace uMatrixCleaner
 		/// </summary>
 		public int RandomDelete { get; set; }
 
-		internal static bool GetBooleanOption(List<string> args, string option)
+		public static bool GetBooleanOption(List<string> args, string option)
 		{
 			int p = args.IndexOf(option);
 			if (p != -1)
-				args.RemoveAt(p);
+				args[p] = "-";
 			return p != -1;
 		}
 
@@ -58,7 +58,7 @@ namespace uMatrixCleaner
 		/// <param name="option"></param>
 		/// <param name="defaultValue">当选项存在但值不存在时返回的值。如果选项本身不存在，则固定返回default(T)。</param>
 		/// <returns></returns>
-		internal static string GetOptionalNamedOptionArgument(List<string> args, string option, string defaultValue)
+		public static string GetOptionalNamedOptionArgument(List<string> args, string option, string defaultValue)
 		{
 			int p = args.IndexOf(option);
 			if (p == -1)
@@ -74,14 +74,14 @@ namespace uMatrixCleaner
 				}
 				else if (args[p + 1].StartsWith("-"))
 				{
-					args.RemoveAt(p);
+					args[p] = "-";
 					return defaultValue;
 				}
 				else
 				{
 					var value = args[p + 1];
-					args.RemoveAt(p);
-					args.RemoveAt(p);
+					args[p] = "-";
+					args.RemoveAt(p + 1);
 					return value;
 				}
 			}
@@ -94,7 +94,7 @@ namespace uMatrixCleaner
 		/// <param name="option"></param>
 		/// <param name="defaultValue">当选项存在但值不存在时返回的值。如果选项本身不存在，则固定返回default(T)。</param>
 		/// <returns></returns>
-		internal static T GetOptionalNamedOptionArgument<T>(List<string> args, string option, T defaultValue) where T : struct
+		public static T GetOptionalNamedOptionArgument<T>(List<string> args, string option, T defaultValue) where T : struct
 		{
 			int p = args.IndexOf(option);
 			if (p == -1)
@@ -105,19 +105,20 @@ namespace uMatrixCleaner
 			{
 				if (p + 1 == args.Count)
 				{
+					//是最后一个参数
 					args.RemoveAt(p);
 					return defaultValue;
 				}
 				else if (args[p + 1].StartsWith("-"))
 				{
-					args.RemoveAt(p);
+					args[p] = "-";
 					return defaultValue;
 				}
 				else
 				{
 					var value = args[p + 1];
-					args.RemoveAt(p);
-					args.RemoveAt(p);
+					args[p] = "-";
+					args.RemoveAt(p + 1);
 
 					try
 					{

@@ -17,7 +17,7 @@ namespace uMatrixCleaner
 	public class Program
 	{
 		private static readonly ILogger logger;
-		private static Options options;
+		public static Options Options { get; private set; }
 
 		static Program()
 		{
@@ -85,20 +85,20 @@ namespace uMatrixCleaner
 				//return;
 
 
-				options = new Options();
+				Options = new Options();
 				if (ParseOptions(args)) return;
 
 
-				var outputString = Clean(File.ReadAllText(options.InputFilePath));
+				var outputString = Clean(File.ReadAllText(Options.InputFilePath));
 
-				if (string.IsNullOrEmpty(options.OutputFilePath))
+				if (string.IsNullOrEmpty(Options.OutputFilePath))
 				{
-					var path = Path.GetDirectoryName(options.InputFilePath);
+					var path = Path.GetDirectoryName(Options.InputFilePath);
 					path = Path.Combine(path, "uMatrixRules-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".txt");
 					File.WriteAllText(path, outputString);
 				}
 				else
-					File.WriteAllText(options.OutputFilePath, outputString);
+					File.WriteAllText(Options.OutputFilePath, outputString);
 
 			}
 			finally
@@ -122,7 +122,7 @@ namespace uMatrixCleaner
 				{
 					r=>r.Selector.Source=="*" && (r.Selector.Destination=="*" || r.Selector.Destination==HostPredicate.N1stParty)//不删除默认规则
 				});
-			if (options.CheckLog != null)
+			if (Options.CheckLog != null)
 			{
 				var deletedRules = ReadHistorialDeletions();
 				fixedRulePredicates.Add(rule => deletedRules.Contains(rule));
@@ -134,7 +134,7 @@ namespace uMatrixCleaner
 			var random = new Random();
 			foreach (var rule in isFixedRules[false])
 			{
-				if (options.RandomDelete > 0 && random.Next(0, 100) <= options.RandomDelete)
+				if (Options.RandomDelete > 0 && random.Next(0, 100) <= Options.RandomDelete)
 					logger.LogInformation("{0}被随机删除。", rule);
 				else
 					workingRules.Add(rule);
@@ -142,7 +142,7 @@ namespace uMatrixCleaner
 
 			//不可删除的规则也要参与锁定
 			RuleRelationshipManager ruleManager = new RuleRelationshipManager(workingRules.Union(isFixedRules[true]).ToList());
-			EventsHelper events = options.Log != null ? new EventsHelper() : null;
+			EventsHelper events = Options.Log != null ? new EventsHelper() : null;
 
 			Stopwatch sw = null;
 			if (logger.IsEnabled(LogLevel.Debug))
@@ -175,7 +175,7 @@ namespace uMatrixCleaner
 			};
 
 
-			var newRules = ruleManager.Clean(options.MergeThreshold);
+			var newRules = ruleManager.Clean(Options.MergeThreshold);
 			if (sw != null)
 			{
 				sw.Stop();
@@ -195,7 +195,7 @@ namespace uMatrixCleaner
 		{
 			var deletedRules = new List<UMatrixRule>();
 			var serializer = new XmlSerializer(typeof(UMatrixRule));
-			foreach (var fileName in Directory.EnumerateFiles(options.CheckLog == string.Empty ? Directory.GetCurrentDirectory() : options.CheckLog, "*.xml"))
+			foreach (var fileName in Directory.EnumerateFiles(Options.CheckLog == string.Empty ? Directory.GetCurrentDirectory() : Options.CheckLog, "*.xml"))
 			{
 				try
 				{
@@ -223,7 +223,7 @@ namespace uMatrixCleaner
 
 		private static void SaveEvents(EventsHelper events)
 		{
-			var xmlPath = options.Log == "d" ? System.IO.Path.Combine(Directory.GetCurrentDirectory(), "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : options.Log;
+			var xmlPath = Options.Log == "d" ? System.IO.Path.Combine(Directory.GetCurrentDirectory(), "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : Options.Log;
 			using (XmlWriter xmlWriter = XmlWriter.Create(xmlPath, new XmlWriterSettings { Indent = true }))
 			{
 				xmlWriter.WriteProcessingInstruction("xml-stylesheet", "type=\"text/xsl\" href=\"styles.xsl\"");
@@ -241,7 +241,7 @@ namespace uMatrixCleaner
 		}
 
 
-		private static bool ParseOptions(string[] args)
+		public static bool ParseOptions(string[] args)
 		{
 
 			var argList = new List<string>(args);
@@ -252,14 +252,12 @@ namespace uMatrixCleaner
 				return true;
 			}
 
-			options.Log = Options.GetOptionalNamedOptionArgument(argList, "--Log", "d");
-			options.MergeThreshold = Options.GetOptionalNamedOptionArgument(argList, "--MergeThreshold", 3);
-			options.IsVerbose = Options.GetBooleanOption(argList, "--Verbose");
-			options.CheckLog = Options.GetOptionalNamedOptionArgument(argList, "--CheckLog", string.Empty);
-			options.RandomDelete = Options.GetOptionalNamedOptionArgument(argList, "--RandomDelete", 5);
-			var p = argList.IndexOf("--");
-			if (p > -1)
-				argList.RemoveAt(p);
+			Options.Log = Options.GetOptionalNamedOptionArgument(argList, "--Log", "d");
+			Options.MergeThreshold = Options.GetOptionalNamedOptionArgument(argList, "--MergeThreshold", 3);
+			Options.IsVerbose = Options.GetBooleanOption(argList, "--Verbose");
+			Options.CheckLog = Options.GetOptionalNamedOptionArgument(argList, "--CheckLog", string.Empty);
+			Options.RandomDelete = Options.GetOptionalNamedOptionArgument(argList, "--RandomDelete", 5);
+			argList = argList.Where(a => a != "--" && a != "-").ToList();
 			var unknownOptions = argList.Where(item => item.StartsWith("-"));
 			if (unknownOptions.Any())
 			{
@@ -279,9 +277,9 @@ namespace uMatrixCleaner
 				return true;
 			}
 
-			options.InputFilePath = argList[0];
+			Options.InputFilePath = argList[0];
 			if (argList.Count == 2)
-				options.OutputFilePath = argList[1];
+				Options.OutputFilePath = argList[1];
 			return false;
 		}
 
