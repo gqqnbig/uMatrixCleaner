@@ -195,7 +195,7 @@ namespace uMatrixCleaner
 		{
 			var deletedRules = new List<UMatrixRule>();
 			var serializer = new XmlSerializer(typeof(UMatrixRule));
-			foreach (var fileName in Directory.EnumerateFiles(options.CheckLog == string.Empty ? AppContext.BaseDirectory : options.CheckLog, "*.xml"))
+			foreach (var fileName in Directory.EnumerateFiles(options.CheckLog == string.Empty ? Directory.GetCurrentDirectory() : options.CheckLog, "*.xml"))
 			{
 				try
 				{
@@ -223,7 +223,7 @@ namespace uMatrixCleaner
 
 		private static void SaveEvents(EventsHelper events)
 		{
-			var xmlPath = options.Log == "d" ? System.IO.Path.Combine(AppContext.BaseDirectory, "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : options.Log;
+			var xmlPath = options.Log == "d" ? System.IO.Path.Combine(Directory.GetCurrentDirectory(), "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : options.Log;
 			using (XmlWriter xmlWriter = XmlWriter.Create(xmlPath, new XmlWriterSettings { Indent = true }))
 			{
 				xmlWriter.WriteProcessingInstruction("xml-stylesheet", "type=\"text/xsl\" href=\"styles.xsl\"");

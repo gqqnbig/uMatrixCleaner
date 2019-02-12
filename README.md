@@ -10,7 +10,7 @@
 显示帮助
 
 ### --Log
-保存XML日志。如果本选项后带有参数"d"，则日志保存在[当前目录](https://docs.microsoft.com/zh-cn/dotnet/api/system.appcontext.basedirectory?view=netframework-4.7.2)，文件名是uMatrix-_日期_.xml。如果参数是其他值，则该值指定日志的完整路径。
+保存XML日志。如果本选项后带有参数"d"，则日志保存在输入文件路径的同级目录，文件名是uMatrix-_日期_.xml。如果参数是其他值，则该值指定日志的完整路径。
 
 ### --CheckLog [folder]
 检查目录，读取里面的xml日志文件。如果一条记录以前被删除过，但现在又出现了，说明该规则是不可删的。如果folder被省略，则检查输入文件路径的同级目录。
