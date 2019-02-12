@@ -125,7 +125,7 @@ namespace uMatrixCleaner
 					}
 					catch (Exception)
 					{
-						throw new FormatException($"Unable to convert value \"{value}\" to type \"{typeof(T).Name}\".");
+						throw new FormatException($"Unable to convert value \"{value}\" to type \"{typeof(T).Name}\" for option \"{option}\".");
 					}
 				}
 			}
