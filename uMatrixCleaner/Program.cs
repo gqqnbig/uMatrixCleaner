@@ -195,7 +195,7 @@ namespace uMatrixCleaner
 		{
 			var deletedRules = new List<UMatrixRule>();
 			var serializer = new XmlSerializer(typeof(UMatrixRule));
-			foreach (var fileName in Directory.EnumerateFiles(Options.CheckLog == string.Empty ? Directory.GetCurrentDirectory() : Options.CheckLog, "*.xml"))
+			foreach (var fileName in Directory.EnumerateFiles(Options.CheckLog, "*.xml"))
 			{
 				try
 				{
@@ -223,7 +223,7 @@ namespace uMatrixCleaner
 
 		private static void SaveEvents(EventsHelper events)
 		{
-			var xmlPath = Options.Log == "d" ? System.IO.Path.Combine(Directory.GetCurrentDirectory(), "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : Options.Log;
+			var xmlPath = Options.Log == "d" ? System.IO.Path.Combine(Path.GetDirectoryName(Options.InputFilePath), "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : Options.Log;
 			using (XmlWriter xmlWriter = XmlWriter.Create(xmlPath, new XmlWriterSettings { Indent = true }))
 			{
 				xmlWriter.WriteProcessingInstruction("xml-stylesheet", "type=\"text/xsl\" href=\"styles.xsl\"");
@@ -280,6 +280,14 @@ namespace uMatrixCleaner
 			Options.InputFilePath = argList[0];
 			if (argList.Count == 2)
 				Options.OutputFilePath = argList[1];
+
+
+			if (Options.CheckLog == string.Empty)
+			{
+				var path = Path.GetDirectoryName(Options.InputFilePath);
+				Options.CheckLog = path;
+			}
+
 			return false;
 		}
 
