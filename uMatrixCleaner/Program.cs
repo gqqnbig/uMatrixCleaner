@@ -195,6 +195,9 @@ namespace uMatrixCleaner
 		{
 			var deletedRules = new List<UMatrixRule>();
 			var serializer = new XmlSerializer(typeof(UMatrixRule));
+			if (string.IsNullOrEmpty(Options.CheckLog))
+				throw new ArgumentNullException("CheckLog");
+
 			foreach (var fileName in Directory.EnumerateFiles(Options.CheckLog, "*.xml"))
 			{
 				try
@@ -277,7 +280,7 @@ namespace uMatrixCleaner
 				return true;
 			}
 
-			Options.InputFilePath = argList[0];
+			Options.InputFilePath = Path.GetFullPath(argList[0]);
 			if (argList.Count == 2)
 				Options.OutputFilePath = argList[1];
 
