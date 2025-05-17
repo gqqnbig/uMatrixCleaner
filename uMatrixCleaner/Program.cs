@@ -139,7 +139,7 @@ namespace uMatrixCleaner
 			var random = new Random();
 			foreach (var rule in isFixedRules[false])
 			{
-				if (options.RandomDelete > 0 && random.Next(0, 100) <= options.RandomDelete)
+				if (options?.RandomDelete > 0 && random.Next(0, 100) <= options.RandomDelete)
 					logger.LogInformation("{0}被随机删除。", rule);
 				else
 					workingRules.Add(rule);
@@ -200,7 +200,7 @@ namespace uMatrixCleaner
 		{
 			var deletedRules = new List<UMatrixRule>();
 			var serializer = new XmlSerializer(typeof(UMatrixRule));
-			foreach (var fileName in Directory.EnumerateFiles(options.CheckLog == string.Empty ? AppContext.BaseDirectory : options.CheckLog, "*.xml"))
+			foreach (var fileName in Directory.EnumerateFiles(options.CheckLog == string.Empty ? Path.GetDirectoryName(options.InputFilePath) : options.CheckLog, "*.xml"))
 			{
 				try
 				{
@@ -228,7 +228,7 @@ namespace uMatrixCleaner
 
 		private static void SaveEvents(EventsHelper events)
 		{
-			var xmlPath = options.Log == "d" ? System.IO.Path.Combine(AppContext.BaseDirectory, "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : options.Log;
+			var xmlPath = options.Log == "d" ? System.IO.Path.Combine(System.IO.Path.GetDirectoryName(options.InputFilePath), "uMatrix-" + DateTimeOffset.Now.ToString("yyyy-MM-dd") + ".xml") : options.Log;
 			using (XmlWriter xmlWriter = XmlWriter.Create(xmlPath, new XmlWriterSettings { Indent = true }))
 			{
 				xmlWriter.WriteProcessingInstruction("xml-stylesheet", "type=\"text/xsl\" href=\"styles.xsl\"");
@@ -257,11 +257,11 @@ namespace uMatrixCleaner
 				return true;
 			}
 
-			options.Log = Options.GetOptionalNamedOptionArgument(argList, "--Log", "d");
-			options.MergeThreshold = Options.GetOptionalNamedOptionArgument(argList, "--MergeThreshold", 3);
+			options.Log = Options.GetNullableNamedOptionArgument(argList, "--Log", "d");
+			options.MergeThreshold = Options.GetNamedOptionArgument(argList, "--MergeThreshold", 3);
 			options.IsVerbose = Options.GetBooleanOption(argList, "--Verbose");
-			options.CheckLog = Options.GetOptionalNamedOptionArgument(argList, "--CheckLog", string.Empty);
-			options.RandomDelete = Options.GetOptionalNamedOptionArgument(argList, "--RandomDelete", 5);
+			options.CheckLog = Options.GetNullableNamedOptionArgument(argList, "--CheckLog", string.Empty);
+			options.RandomDelete = Options.GetNullableNamedOptionArgument(argList, "--RandomDelete", 5);
 			var p = argList.IndexOf("--");
 			if (p > -1)
 				argList.RemoveAt(p);

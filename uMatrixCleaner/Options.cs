@@ -41,7 +41,7 @@ namespace uMatrixCleaner
 		/// <summary>
 		/// 随机删除百分之多少的规则。
 		/// </summary>
-		public int RandomDelete { get; set; }
+		public int? RandomDelete { get; set; }
 
 		internal static bool GetBooleanOption(List<string> args, string option)
 		{
@@ -56,9 +56,9 @@ namespace uMatrixCleaner
 		/// </summary>
 		/// <param name="args"></param>
 		/// <param name="option"></param>
-		/// <param name="defaultValue">当选项存在但值不存在时返回的值。如果选项本身不存在，则固定返回default(T)。</param>
+		/// <param name="defaultValue">当选项存在但值不存在时返回的值。如果选项本身不存在，则固定返回null。</param>
 		/// <returns></returns>
-		internal static string GetOptionalNamedOptionArgument(List<string> args, string option, string defaultValue)
+		internal static string GetNullableNamedOptionArgument(List<string> args, string option, string defaultValue)
 		{
 			int p = args.IndexOf(option);
 			if (p == -1)
@@ -92,9 +92,38 @@ namespace uMatrixCleaner
 		/// </summary>
 		/// <param name="args"></param>
 		/// <param name="option"></param>
-		/// <param name="defaultValue">当选项存在但值不存在时返回的值。如果选项本身不存在，则固定返回default(T)。</param>
+		/// <param name="defaultValue">当选项存在但值不存在时返回的值。如果选项本身不存在，则固定返回null。</param>
 		/// <returns></returns>
-		internal static T GetOptionalNamedOptionArgument<T>(List<string> args, string option, T defaultValue) where T : struct
+		internal static T? GetNullableNamedOptionArgument<T>(List<string> args, string option, T defaultValue) where T : struct
+		{
+			int p = args.IndexOf(option);
+			if (p == -1)
+			{
+				return null;
+			}
+			else
+			{
+				if (p + 1 == args.Count)
+				{
+					args.RemoveAt(p);
+					return defaultValue;
+				}
+				else if (args[p + 1].StartsWith("-"))
+				{
+					args.RemoveAt(p);
+					return defaultValue;
+				}
+				else
+				{
+					var value = args[p + 1];
+					args.RemoveAt(p);
+					args.RemoveAt(p);
+					return (T)Convert.ChangeType(value, typeof(T));
+				}
+			}
+		}
+
+		internal static T GetNamedOptionArgument<T>(List<string> args, string option, T defaultValue) where T : struct
 		{
 			int p = args.IndexOf(option);
 			if (p == -1)
